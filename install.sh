@@ -4,8 +4,9 @@
 #
 # Interactive script that:
 #   [ Creates user "gui" (pwd: "gui") if not present ]
-#   [ Auto-login on TTY1 ]
-#   [ Installs xorg, chromium-browser, unclutter, matchbox-window-manager (if missing) ]
+#   [ Adds "gui" to dialout group ]
+#   [ Auto-logins on TTY1 ]
+#   [ Installs xorg, chromium-browser, chromium, unclutter, matchbox-window-manager (if missing) ]
 #   [ Prompts for resolution + URL ]
 #   [ Applies xrandr (no scale by default) ]
 #   [ Runs a minimal window manager (matchbox) + Chromium in kiosk mode ]
@@ -31,6 +32,9 @@ then
   echo "gui:gui" | chpasswd
 fi
 
+# Add gui user to dialout group
+usermod -aG dialout gui
+
 #####################
 # 2) Setup auto-login on tty1 for "gui"
 #####################
@@ -38,7 +42,7 @@ mkdir -p /etc/systemd/system/getty@tty1.service.d
 cat <<EOF > /etc/systemd/system/getty@tty1.service.d/autologin.conf
 [Service]
 ExecStart=
-ExecStart=-/sbin/agetty --autologin gui --noclear %I $TERM
+ExecStart=-/sbin/agetty --autologin gui --noclear %I \$TERM
 EOF
 
 #####################
@@ -49,6 +53,7 @@ apt-get update -y
 
 PACKAGES=(
   xorg
+  chromium
   chromium-browser
   unclutter
   matchbox-window-manager
@@ -60,12 +65,26 @@ do
   then
     echo "Package '$pkg' is already installed."
   else
-    apt-get install -y "$pkg"
+    apt-get install -y "$pkg" || echo "Package '$pkg' not found or could not be installed."
   fi
 done
 
 #####################
-# 4) Prompt for resolution + URL
+# 4) Determine which chromium command to use
+#####################
+if dpkg -s chromium &>/dev/null
+then
+  CHROMIUM_CMD="chromium"
+elif dpkg -s chromium-browser &>/dev/null
+then
+  CHROMIUM_CMD="chromium-browser"
+else
+  echo "Neither 'chromium' nor 'chromium-browser' is installed or installable. Aborting."
+  exit 1
+fi
+
+#####################
+# 5) Prompt for resolution + URL
 #####################
 echo "Select a resolution mode for HDMI-1 (common combos):"
 echo "1) 1080p (1920x1080)"
@@ -97,7 +116,7 @@ then
 fi
 
 #####################
-# 5) Create .bash_profile to auto-start X on TTY1
+# 6) Create .bash_profile to auto-start X on TTY1
 #####################
 BASH_PROFILE="/home/gui/.bash_profile"
 cat <<'EOF' > "$BASH_PROFILE"
@@ -127,7 +146,7 @@ chown gui:gui "$BASH_PROFILE"
 chmod 644 "$BASH_PROFILE"
 
 #####################
-# 6) Create .xinitrc (xrandr + matchbox + chromium kiosk)
+# 7) Create .xinitrc (xrandr + matchbox + chromium kiosk)
 #####################
 XINITRC="/home/gui/.xinitrc"
 cat <<EOF > "$XINITRC"
@@ -149,7 +168,7 @@ matchbox-window-manager &
 sleep 3
 
 # Launch Chromium in kiosk mode
-chromium-browser \
+${CHROMIUM_CMD} \
   --kiosk \
   --no-first-run \
   --disable-infobars \
@@ -162,7 +181,7 @@ chown gui:gui "$XINITRC"
 chmod 644 "$XINITRC"
 
 #####################
-# 7) Reload systemd, restart getty@tty1
+# 8) Reload systemd, restart getty@tty1
 #####################
 systemctl daemon-reload
 systemctl restart getty@tty1
@@ -173,5 +192,7 @@ echo "TTY1 will auto-login user 'gui'."
 echo "Resolution: ${RESOLUTION}"
 echo "URL: ${TARGET_URL}"
 echo "Using matchbox-window-manager + Chromium kiosk."
+echo "Detected Chromium command: ${CHROMIUM_CMD}"
 echo "Switch to TTY1 (Ctrl+Alt+F1) or reboot to test."
 echo "========================================================"
+
