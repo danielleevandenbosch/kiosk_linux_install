@@ -100,8 +100,24 @@ fi
 # 5) Create .bash_profile to auto-start X on TTY1
 #####################
 BASH_PROFILE="/home/gui/.bash_profile"
-cat <<EOF > "$BASH_PROFILE"
-if [[ -z \$DISPLAY ]] && [[ \$(tty) = /dev/tty1 ]]
+cat <<'EOF' > "$BASH_PROFILE"
+clear
+
+cat <<'SPLASH'
+  _      _                    _  ___           _                                                                 
+ | |    (_)                  | |/ (_)         | |                                                                
+ | |     _ _ __  _   ___  __ | ' / _  ___  ___| | __                                                             
+ | |    | | '_ \| | | \ \/ / |  < | |/ _ \/ __| |/ /                                                             
+ | |____| | | | | |_| |>  <  | . \| | (_) \__ \   <                                                              
+ |______|_|_| |_|\__,_/_/\_\ |_|\_\_|\___/|___/_|\_\   
+
+Daniel Van Den Bosch Kiosk Linux
+https://github.com/danielleevandenbosch/kiosk_linux_install
+SPLASH
+
+sleep 3
+
+if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]
 then
   startx
 fi
@@ -129,25 +145,8 @@ xrandr \
 # Minimal window manager so that Chromium can truly go fullscreen
 matchbox-window-manager &
 
-# A short wait before launching a splash screen
-sleep 1
-
-SPLASH_ASCII="     
-  _      _                    _  ___           _                                                                 
- | |    (_)                  | |/ (_)         | |                                                                
- | |     _ _ __  _   ___  __ | ' / _  ___  ___| | __                                                             
- | |    | | '_ \| | | \ \/ / |  < | |/ _ \/ __| |/ /                                                             
- | |____| | | | | |_| |>  <  | . \| | (_) \__ \   <                                                              
- |______|_|_| |_|\__,_/_/\_\ |_|\_\_|\___/|___/_|\_\                                                                   
-Daniel Van Den Bosch Kiosk Linux
-https://github.com/danielleevandenbosch/kiosk_linux_install
-"
-
-# Show the splash in xterm for ~3 seconds
-xterm -bg black -fg white -geometry 80x20+200+200 -hold -e bash -c "clear; echo \"$SPLASH_ASCII\"; sleep 3" &
-
 # Wait a bit to ensure splash is visible
-sleep 4
+sleep 3
 
 # Launch Chromium in kiosk mode
 chromium-browser \
