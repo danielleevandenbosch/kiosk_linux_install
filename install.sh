@@ -72,11 +72,11 @@ read -rp "Enter choice [1-3]: " CHOICE
 case "$CHOICE" in
   1)
     RESOLUTION="1920x1080"
-    SCALE="1x1"
+    SCALE="0.5x1"
     ;;
   2)
     RESOLUTION="3840x2160"
-    SCALE="0.5x0.5"
+    SCALE="0.25x0.5"
     ;;
   3)
     read -rp "Enter custom resolution (e.g. 1920x1080): " RESOLUTION
