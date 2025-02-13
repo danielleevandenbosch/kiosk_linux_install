@@ -129,8 +129,17 @@ xrandr \
 # Minimal window manager so that Chromium can truly go fullscreen
 matchbox-window-manager &
 
-# Wait a moment before launching Chromium
-sleep 3
+# A short wait before launching a splash screen
+sleep 1
+
+# Placeholder splash screen in an xterm (3 seconds)
+xterm -bg black -fg white -geometry 80x20+200+200 -e 'clear; cat <<EOF
+https://github.com/danielleevandenbosch/kiosk_linux_install
+EOF
+sleep 3' &
+
+# Wait a bit to ensure splash is visible
+sleep 4
 
 # Launch Chromium in kiosk mode
 chromium-browser \
