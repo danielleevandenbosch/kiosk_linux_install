@@ -132,11 +132,19 @@ matchbox-window-manager &
 # A short wait before launching a splash screen
 sleep 1
 
-# Placeholder splash screen in an xterm (3 seconds)
-xterm -bg black -fg white -geometry 80x20+200+200 -e 'clear; cat <<EOF
+SPLASH_ASCII="     
+  _      _                    _  ___           _                                                                 
+ | |    (_)                  | |/ (_)         | |                                                                
+ | |     _ _ __  _   ___  __ | ' / _  ___  ___| | __                                                             
+ | |    | | '_ \| | | \ \/ / |  < | |/ _ \/ __| |/ /                                                             
+ | |____| | | | | |_| |>  <  | . \| | (_) \__ \   <                                                              
+ |______|_|_| |_|\__,_/_/\_\ |_|\_\_|\___/|___/_|\_\                                                                   
+Daniel Van Den Bosch Kiosk Linux
 https://github.com/danielleevandenbosch/kiosk_linux_install
-EOF
-sleep 3' &
+"
+
+# Show the splash in xterm for ~3 seconds
+xterm -bg black -fg white -geometry 80x20+200+200 -hold -e bash -c "clear; echo \"$SPLASH_ASCII\"; sleep 3" &
 
 # Wait a bit to ensure splash is visible
 sleep 4
