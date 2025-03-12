@@ -57,6 +57,7 @@ PACKAGES=(
   chromium-browser
   unclutter
   matchbox-window-manager
+  network-manager
 )
 
 for pkg in "${PACKAGES[@]}"
@@ -173,7 +174,6 @@ ${CHROMIUM_CMD} \
   --no-first-run \
   --disable-infobars \
   --disable-session-crashed-bubble \
-  --incognito \
   ${TARGET_URL}
 EOF
 
