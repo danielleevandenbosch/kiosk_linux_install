@@ -58,6 +58,8 @@ PACKAGES=(
   unclutter
   matchbox-window-manager
   network-manager
+  openssh-client
+  openssh-server
 )
 
 for pkg in "${PACKAGES[@]}"
