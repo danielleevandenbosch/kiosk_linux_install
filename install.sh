@@ -60,6 +60,10 @@ PACKAGES=(
   network-manager
   openssh-client
   openssh-server
+  zsh
+  vim
+  neofetch
+  htop
 )
 
 for pkg in "${PACKAGES[@]}"
