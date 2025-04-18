@@ -167,7 +167,6 @@ xset s off -dpms &
 
 # Hide mouse pointer after 300s of inactivity
 unclutter -idle 300 &
-onboard &
 
 # Force HDMI-1 to the chosen resolution, disable HDMI-2 (if present)
 xrandr \
@@ -186,6 +185,9 @@ ${CHROMIUM_CMD} \
   --no-first-run \
   --disable-infobars \
   --disable-session-crashed-bubble \
+  --enable-touch-events \
+  --touch-devices=enabled \
+  --enable-virtual-keyboard \ 
   ${TARGET_URL}
 EOF
 
