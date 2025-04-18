@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
-##############################################################################
-# Wayland‑ONLY Kiosk Auto‑Ricer – robust weston-launch handling              #
-##############################################################################
+# install_wayland.sh
+# Master Wayland-only kiosk ricer, calls dependency script first
+
 set -euo pipefail
 INSTALL_LOG=/var/log/kiosk_install.log
 exec > >(tee -a "$INSTALL_LOG") 2>&1
-echo "===== INSTALL $(date) ====="
 
-die(){ echo "❌  $*"; exit 1; }
-pkg(){ dpkg -s "$1" &>/dev/null || apt-get install -y "$1" || die "pkg $1"; }
-as_gui(){ sudo -u gui bash -c "$*"; }
+log() { echo -e "[installer] $*"; }
+die() { echo "❌  $*"; exit 1; }
+pkg() { dpkg -s "$1" &>/dev/null || apt-get install -y "$1" || die "pkg $1"; }
+as_gui() { sudo -u gui bash -c "$*"; }
 
 [ "$(id -u)" -eq 0 ] || die "Run as root."
+
+log "Calling dependency installer..."
+bash ./install_wayland_dependancies.sh || die "Dependency script failed."
 
 # ── 1. user gui ────────────────────────────────────────────────────────────
 id -u gui &>/dev/null || { useradd -m -s /bin/bash gui; echo gui:gui | chpasswd; }
@@ -25,32 +28,26 @@ ExecStart=
 ExecStart=-/sbin/agetty --autologin gui --noclear %I $TERM
 EOF
 
-# ── 3. packages ────────────────────────────────────────────────────────────
-apt-get update -y
-for p in weston chromium maliit-keyboard; do pkg "$p"; done
-command -v chromium >/dev/null || die "Chromium missing"
-
-# ── 4. weston-launch detection ─────────────────────────────────────────────
+# ── 3. weston-launch detection ─────────────────────────────────────────────
 WESTON_LAUNCH_BIN=""
 for path in \
     "$(command -v weston-launch 2>/dev/null)" \
     /usr/bin/weston-launch \
     /usr/libexec/weston-launch
-do
+  do
     if [ -x "$path" ]; then
-        WESTON_LAUNCH_BIN="$path"
-        break
+      WESTON_LAUNCH_BIN="$path"
+      break
     fi
 done
 
 if [ -z "$WESTON_LAUNCH_BIN" ]; then
-    die "weston-launch not found. Install weston-launch or check your Weston install."
+  die "weston-launch not found. Install weston-launch or check your Weston install."
 fi
-
 chmod u+s "$WESTON_LAUNCH_BIN"
 echo "• Using weston-launch: $WESTON_LAUNCH_BIN"
 
-# ── 5. prompt ─────────────────────────────────────────────────────────────
+# ── 4. prompt ─────────────────────────────────────────────────────────────
 read -rp "Resolution (WxH) [1920x1080]: " RES
 RES=${RES:-1920x1080}
 [[ $RES =~ ^[0-9]+x[0-9]+$ ]] || die "Bad resolution"
@@ -59,7 +56,7 @@ read -rp "URL to open [https://example.com]: " URL
 URL=${URL:-https://example.com}
 echo "• Using resolution ${W}x${H}, URL=$URL"
 
-# ── 6. weston.ini ─────────────────────────────────────────────────────────
+# ── 5. weston.ini ─────────────────────────────────────────────────────────
 KEYBD=$(dpkg -L weston | grep -m1 weston-keyboard) || die "weston-keyboard not found"
 as_gui "mkdir -p ~/.config && cat > ~/.config/weston.ini <<INI
 [core]
@@ -68,7 +65,7 @@ idle-time=0
 command=$KEYBD
 INI"
 
-# ── 7. start_kiosk.sh ─────────────────────────────────────────────────────
+# ── 6. start_kiosk.sh ─────────────────────────────────────────────────────
 as_gui "cat > ~/start_kiosk.sh <<SK
 #!/usr/bin/env bash
 export XDG_RUNTIME_DIR=/run/user/\$(id -u)
@@ -89,13 +86,13 @@ PID=\$!
 for i in {1..6}; do [ -S \$XDG_RUNTIME_DIR/wayland-0 ] && READY=1 && break; sleep 1; done
 
 if [ \"\$READY\" != 1 ]; then
-    chown \$(id -u):\$(id -g) \$LOG
-    echo \"-------------------------------------------------\" >/dev/tty1
-    echo \"Weston FAILED – last 60 log lines:\" >/dev/tty1
-    echo \"-------------------------------------------------\" >/dev/tty1
-    tail -n 60 \$LOG | tee /dev/tty1
-    kill \$PID 2>/dev/null || true
-    exit 1
+  chown \$(id -u):\$(id -g) \$LOG
+  echo \"-------------------------------------------------\" >/dev/tty1
+  echo \"Weston FAILED – last 60 log lines:\" >/dev/tty1
+  echo \"-------------------------------------------------\" >/dev/tty1
+  tail -n 60 \$LOG | tee /dev/tty1
+  kill \$PID 2>/dev/null || true
+  exit 1
 fi
 
 echo \"[kiosk] Weston ready\" >> \$LOG
@@ -106,13 +103,13 @@ exec chromium --ozone-platform=wayland --enable-wayland-ime --kiosk \
 SK
 chmod +x ~/start_kiosk.sh"
 
-# ── 8. bash_profile ───────────────────────────────────────────────────────
+# ── 7. bash_profile ───────────────────────────────────────────────────────
 as_gui "cat > ~/.bash_profile <<'BP'
 [[ -z \$WAYLAND_DISPLAY && \$(tty) = /dev/tty1 ]] && ~/start_kiosk.sh
 BP"
 chmod 644 /home/gui/.bash_profile
 
-# ── 9. finish ─────────────────────────────────────────────────────────────
+# ── 8. finish ─────────────────────────────────────────────────────────────
 systemctl daemon-reload
 systemctl restart getty@tty1
 
