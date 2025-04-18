@@ -1,20 +1,7 @@
 #!/usr/bin/env bash
 
-# setup_autologin_browser.sh
-#
-# Interactive script that:
-#   [ Creates user "gui" (pwd: "gui") if not present ]
-#   [ Adds "gui" to dialout group ]
-#   [ Auto-logins on TTY1 ]
-#   [ Installs xorg, chromium-browser, chromium, unclutter, matchbox-window-manager (if missing) ]
-#   [ Prompts for resolution + URL ]
-#   [ Applies xrandr (no scale by default) ]
-#   [ Runs a minimal window manager (matchbox) + Chromium in kiosk mode ]
-#
-# If you encounter half-screen issues with scaling, it's often easier
-# to set the monitor to a specific mode (e.g., 1920x1080) with xrandr
-# rather than scaling a 4K output. Using a minimal window manager
-# also ensures full-screen coverage.
+# Daniel Van Den Bosch Kiosk Linux Install Script
+# https://github.com/danielleevandenbosch/kiosk_linux_install
 
 # Ensure we run as root
 if [ "$(id -u)" -ne 0 ]
@@ -46,7 +33,7 @@ ExecStart=-/sbin/agetty --autologin gui --noclear %I \$TERM
 EOF
 
 #####################
-# 3) Check/install required packages
+# 3) Install required packages
 #####################
 echo "Updating package lists..."
 apt-get update -y
@@ -58,6 +45,7 @@ PACKAGES=(
   unclutter
   matchbox-window-manager
   onboard
+  xdotool
   network-manager
   openssh-client
   openssh-server
@@ -65,7 +53,6 @@ PACKAGES=(
   vim
   neofetch
   htop
-  ibus
 )
 
 for pkg in "${PACKAGES[@]}"
@@ -79,7 +66,7 @@ do
 done
 
 #####################
-# 4) Determine which chromium command to use
+# 4) Determine chromium command
 #####################
 if dpkg -s chromium &>/dev/null
 then
@@ -103,12 +90,8 @@ echo "3) Custom"
 read -rp "Enter choice [1-3]: " CHOICE
 
 case "$CHOICE" in
-  1)
-    RESOLUTION="1920x1080"
-    ;;
-  2)
-    RESOLUTION="3840x2160"
-    ;;
+  1) RESOLUTION="1920x1080" ;;
+  2) RESOLUTION="3840x2160" ;;
   3)
     read -rp "Enter custom resolution (e.g. 1920x1080): " RESOLUTION
     ;;
@@ -119,10 +102,7 @@ case "$CHOICE" in
 esac
 
 read -rp "Enter the URL to open in Chromium (default: https://example.com): " TARGET_URL
-if [ -z "$TARGET_URL" ]
-then
-  TARGET_URL="https://example.com"
-fi
+TARGET_URL="${TARGET_URL:-https://example.com}"
 
 #####################
 # 6) Create .bash_profile to auto-start X on TTY1
@@ -153,12 +133,7 @@ else
 fi
 
 sleep 30
-export GTK_IM_MODULE=maliit
-export QT_IM_MODULE=maliit
-maliit-server &
 
-export XMODIFIERS=@im=ibus
-ibus-daemon -drx &
 if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]
 then
   startx
@@ -169,7 +144,7 @@ chown gui:gui "$BASH_PROFILE"
 chmod 644 "$BASH_PROFILE"
 
 #####################
-# 7) Create .xinitrc (xrandr + matchbox + chromium kiosk)
+# 7) Create .xinitrc
 #####################
 XINITRC="/home/gui/.xinitrc"
 cat <<EOF > "$XINITRC"
@@ -184,8 +159,11 @@ xrandr \
   --output HDMI-1 --mode ${RESOLUTION} \
   --output HDMI-2 --off &
 
-# Minimal window manager so that Chromium can truly go fullscreen
+# Minimal window manager
 matchbox-window-manager &
+
+# Launch onboard keyboard watcher
+/home/gui/launch_onboard_on_focus.sh &
 
 # Wait a bit to ensure splash is visible
 sleep 3
@@ -197,8 +175,6 @@ ${CHROMIUM_CMD} \
   --disable-infobars \
   --disable-session-crashed-bubble \
   --enable-touch-events \
-  --touch-devices=enabled \
-  --enable-virtual-keyboard \
   ${TARGET_URL}
 EOF
 
@@ -206,7 +182,32 @@ chown gui:gui "$XINITRC"
 chmod 644 "$XINITRC"
 
 #####################
-# 8) Reload systemd, restart getty@tty1
+# 8) Create onboard focus watcher script
+#####################
+FOCUS_SCRIPT="/home/gui/launch_onboard_on_focus.sh"
+cat <<'EOF' > "$FOCUS_SCRIPT"
+#!/bin/bash
+while true
+do
+    name=$(xdotool getwindowfocus getwindowname 2>/dev/null)
+    if echo "$name" | grep -qiE 'chromium|search|input|form|address'
+    then
+        if ! pgrep -x onboard >/dev/null
+        then
+            onboard &
+        fi
+    else
+        pkill onboard
+    fi
+    sleep 1
+done
+EOF
+
+chmod +x "$FOCUS_SCRIPT"
+chown gui:gui "$FOCUS_SCRIPT"
+
+#####################
+# 9) Reload systemd, restart getty@tty1
 #####################
 systemctl daemon-reload
 systemctl restart getty@tty1
@@ -217,7 +218,5 @@ echo "TTY1 will auto-login user 'gui'."
 echo "Resolution: ${RESOLUTION}"
 echo "URL: ${TARGET_URL}"
 echo "Using matchbox-window-manager + Chromium kiosk."
-echo "Detected Chromium command: ${CHROMIUM_CMD}"
-echo "Switch to TTY1 (Ctrl+Alt+F1) or reboot to test."
+echo "Onboard will auto-popup when Chromium input is focused."
 echo "========================================================"
-
