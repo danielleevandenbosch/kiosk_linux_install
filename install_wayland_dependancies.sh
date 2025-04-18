@@ -33,12 +33,26 @@ $UPDATE_CMD
 
 # Core kiosk packages
 PACKAGES=(
-  weston
-  weston-launch
   chromium
   maliit-keyboard
   dbus
 )
+
+# Try to include weston or weston-launch depending on availability
+if [ "$PKG_MGR" = "apt" ]; then
+  if apt-cache show weston &>/dev/null; then
+    PACKAGES+=(weston)
+  elif apt-cache show weston-launch &>/dev/null; then
+    PACKAGES+=(weston-launch)
+  else
+    echo "❌ Neither weston nor weston-launch available in apt." >&2
+    exit 1
+  fi
+elif [ "$PKG_MGR" = "dnf" ]; then
+  PACKAGES+=(weston)
+elif [ "$PKG_MGR" = "pacman" ]; then
+  PACKAGES+=(weston)
+fi
 
 # Networking + admin tools
 PACKAGES+=(
@@ -63,3 +77,4 @@ $INSTALL_CMD "${PACKAGES[@]}"
 
 log "Dependencies installed."
 exit 0
+
