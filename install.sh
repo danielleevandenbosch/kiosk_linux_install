@@ -65,6 +65,7 @@ PACKAGES=(
   vim
   neofetch
   htop
+  ibus
 )
 
 for pkg in "${PACKAGES[@]}"
@@ -143,11 +144,21 @@ https://github.com/danielleevandenbosch/kiosk_linux_install
 
 SPLASH
 
-echo "battery at: " | figlet 
-acpi | grep -oP '[0-9]+%' | figlet
+if command -v acpi >/dev/null && command -v figlet >/dev/null
+then
+    echo "battery at: " | figlet
+    acpi | grep -oP '[0-9]+%' | figlet
+else
+    echo "Battery: $(acpi 2>/dev/null | grep -oP '[0-9]+%' || echo 'unknown')"
+fi
 
 sleep 30
+export GTK_IM_MODULE=maliit
+export QT_IM_MODULE=maliit
+maliit-server &
 
+export XMODIFIERS=@im=ibus
+ibus-daemon -drx &
 if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]
 then
   startx
@@ -187,7 +198,7 @@ ${CHROMIUM_CMD} \
   --disable-session-crashed-bubble \
   --enable-touch-events \
   --touch-devices=enabled \
-  --enable-virtual-keyboard \ 
+  --enable-virtual-keyboard \
   ${TARGET_URL}
 EOF
 
