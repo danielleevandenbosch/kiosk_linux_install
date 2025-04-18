@@ -39,13 +39,17 @@ for path in \
       WESTON_LAUNCH_BIN="$path"
       break
     fi
-done
+  done
 
 if [ -z "$WESTON_LAUNCH_BIN" ]; then
-  die "weston-launch not found. Install weston-launch or check your Weston install."
+  if command -v weston &>/dev/null; then
+    WESTON_LAUNCH_BIN="$(command -v weston)"
+  else
+    die "Neither weston-launch nor weston found. Install weston or weston-launch."
+  fi
 fi
 chmod u+s "$WESTON_LAUNCH_BIN"
-echo "• Using weston-launch: $WESTON_LAUNCH_BIN"
+echo "• Using Weston launcher: $WESTON_LAUNCH_BIN"
 
 # ── 4. prompt ─────────────────────────────────────────────────────────────
 read -rp "Resolution (WxH) [1920x1080]: " RES
@@ -74,7 +78,7 @@ export WESTON_DEBUG=1
 LOG=\$HOME/kiosk-weston.log
 rm -f \$LOG; touch \$LOG; chmod 664 \$LOG
 
-echo \"[kiosk] boot \$(date)\" > \$LOG
+echo \"[kiosk] boot \\$(date)\" > \$LOG
 
 BACKEND='--backend=drm-backend.so'
 ARGS=\"\$BACKEND --width=$W --height=$H --idle-time=0 --debug\"
@@ -100,8 +104,8 @@ maliit-server >> \$LOG 2>&1 &
 exec chromium --ozone-platform=wayland --enable-wayland-ime --kiosk \
      --no-first-run --disable-infobars --disable-session-crashed-bubble \
      --enable-touch-events \"$URL\"
-SK
-chmod +x ~/start_kiosk.sh"
+SK"
+chmod +x /home/gui/start_kiosk.sh
 
 # ── 7. bash_profile ───────────────────────────────────────────────────────
 as_gui "cat > ~/.bash_profile <<'BP'
@@ -118,3 +122,4 @@ echo "===== INSTALL COMPLETE – REBOOT NOW ====="
 echo "• Weston will launch via $WESTON_LAUNCH_BIN"
 echo "• Logs will appear in /home/gui/kiosk-weston.log"
 echo "• If it fails: last 60 lines dump to tty1"
+
