@@ -57,6 +57,7 @@ PACKAGES=(
   chromium-browser
   unclutter
   matchbox-window-manager
+  onboard
   network-manager
   openssh-client
   openssh-server
@@ -166,6 +167,7 @@ xset s off -dpms &
 
 # Hide mouse pointer after 300s of inactivity
 unclutter -idle 300 &
+onboard &
 
 # Force HDMI-1 to the chosen resolution, disable HDMI-2 (if present)
 xrandr \
