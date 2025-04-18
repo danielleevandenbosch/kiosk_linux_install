@@ -108,7 +108,8 @@ TARGET_URL="${TARGET_URL:-https://example.com}"
 # 6) Create .bash_profile to auto-start X on TTY1
 #####################
 BASH_PROFILE="/home/gui/.bash_profile"
-cat <<'EOF' > "$BASH_PROFILE"
+rm -f "$BASH_PROFILE"
+sudo -u gui tee "$BASH_PROFILE" <<'EOF'
 clear
 
 cat <<'SPLASH'
@@ -139,15 +140,14 @@ then
   startx
 fi
 EOF
-
-chown gui:gui "$BASH_PROFILE"
 chmod 644 "$BASH_PROFILE"
 
 #####################
-# 7) Create .xinitrc
+# 7) Create .xinitrc (replace any existing)
 #####################
 XINITRC="/home/gui/.xinitrc"
-cat <<EOF > "$XINITRC"
+rm -f "$XINITRC"
+sudo -u gui tee "$XINITRC" <<EOF
 # Disable screen blanking + power management
 xset s off -dpms &
 
@@ -155,14 +155,14 @@ xset s off -dpms &
 unclutter -idle 300 &
 
 # Force HDMI-1 resolution, disable HDMI-2
-xrandr \ 
-  --output HDMI-1 --mode ${RESOLUTION} \ 
+xrandr \
+  --output HDMI-1 --mode ${RESOLUTION} \
   --output HDMI-2 --off &
 
 # Start Openbox
 openbox-session &
 
-# Delay then launch onboard focus‐watcher
+# Delay then launch onboard focus‑watcher
 (sleep 5 && /home/gui/launch_onboard_on_focus.sh) &
 
 # Wait a bit for splash
@@ -177,20 +177,19 @@ ${CHROMIUM_CMD} \
   --enable-touch-events \
   ${TARGET_URL}
 EOF
-
-chown gui:gui "$XINITRC"
 chmod 644 "$XINITRC"
 
 #####################
-# 8) Create onboard focus watcher
+# 8) Create onboard focus watcher (replace any existing)
 #####################
 FOCUS_SCRIPT="/home/gui/launch_onboard_on_focus.sh"
-cat <<'EOF' > "$FOCUS_SCRIPT"
+rm -f "$FOCUS_SCRIPT"
+sudo -u gui tee "$FOCUS_SCRIPT" <<'EOF'
 #!/bin/bash
 while true
 do
-    name=$(xdotool getwindowfocus getwindowname 2>/dev/null)
-    if echo "$name" | grep -qiE 'chromium|search|input|form|address'
+    name=\$(xdotool getwindowfocus getwindowname 2>/dev/null)
+    if echo "\$name" | grep -qiE 'chromium|search|input|form|address'
     then
         if ! pgrep -x onboard >/dev/null
         then
@@ -202,9 +201,7 @@ do
     sleep 1
 done
 EOF
-
 chmod +x "$FOCUS_SCRIPT"
-chown gui:gui "$FOCUS_SCRIPT"
 
 #####################
 # 9) Reload systemd, restart getty@tty1
@@ -221,3 +218,4 @@ echo "Window manager: Openbox"
 echo "Chromium in kiosk + touch enabled"
 echo "Onboard auto-popup when Chromium inputs are focused"
 echo "========================================================"
+
