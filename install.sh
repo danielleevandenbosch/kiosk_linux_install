@@ -38,21 +38,22 @@ EOF
 echo "Updating package lists..."
 apt-get update -y
 
-PACKAGES=(
-  xorg
-  chromium
-  chromium-browser
-  unclutter
-  matchbox-window-manager
-  onboard
-  xdotool
-  network-manager
-  openssh-client
-  openssh-server
-  zsh
-  vim
-  neofetch
-  htop
+PACKAGES=
+(
+  ,xorg
+  ,chromium
+  ,chromium-browser
+  ,unclutter
+  ,openbox
+  ,onboard
+  ,xdotool
+  ,network-manager
+  ,openssh-client
+  ,openssh-server
+  ,zsh
+  ,vim
+  ,neofetch
+  ,htop
 )
 
 for pkg in "${PACKAGES[@]}"
@@ -75,25 +76,24 @@ elif dpkg -s chromium-browser &>/dev/null
 then
   CHROMIUM_CMD="chromium-browser"
 else
-  echo "Neither 'chromium' nor 'chromium-browser' is installed or installable. Aborting."
+  echo "Neither 'chromium' nor 'chromium-browser' is installed. Aborting."
   exit 1
 fi
 
 #####################
 # 5) Prompt for resolution + URL
 #####################
-echo "Select a resolution mode for HDMI-1 (common combos):"
+echo "Select a resolution mode for HDMI-1:"
 echo "1) 1080p (1920x1080)"
 echo "2) 4K (3840x2160)"
 echo "3) Custom"
 
 read -rp "Enter choice [1-3]: " CHOICE
-
 case "$CHOICE" in
   1) RESOLUTION="1920x1080" ;;
   2) RESOLUTION="3840x2160" ;;
   3)
-    read -rp "Enter custom resolution (e.g. 1920x1080): " RESOLUTION
+    read -rp "Enter custom resolution (e.g. 1280x720): " RESOLUTION
     ;;
   *)
     echo "Invalid choice, defaulting to 1920x1080."
@@ -101,7 +101,7 @@ case "$CHOICE" in
     ;;
 esac
 
-read -rp "Enter the URL to open in Chromium (default: https://example.com): " TARGET_URL
+read -rp "Enter URL to open (default: https://example.com): " TARGET_URL
 TARGET_URL="${TARGET_URL:-https://example.com}"
 
 #####################
@@ -112,12 +112,12 @@ cat <<'EOF' > "$BASH_PROFILE"
 clear
 
 cat <<'SPLASH'
-  _      _                    _  ___           _                                                                 
- | |    (_)                  | |/ (_)         | |                                                                
- | |     _ _ __  _   ___  __ | ' / _  ___  ___| | __                                                             
- | |    | | '_ \| | | \ \/ / |  < | |/ _ \/ __| |/ /                                                             
- | |____| | | | | |_| |>  <  | . \| | (_) \__ \   <                                                              
- |______|_|_| |_|\__,_/_/\_\ |_|\_\_|\___/|___/_|\_\   
+  _      _                    _  ___           _
+ | |    (_)                  | |/ (_)         | |
+ | |     _ _ __  _   ___  __ | ' / _  ___  ___| | __
+ | |    | | '_ \| | | \ \/ / |  < | |/ _ \/ __| |/ /
+ | |____| | | | | |_| |>  <  | . \| | (_) \__ \   <
+ |______|_|_| |_|\__,_/_/\_\ |_|\_\_|\___/|___/_|\_\
 
 Daniel Van Den Bosch Kiosk Linux
 https://github.com/danielleevandenbosch/kiosk_linux_install
@@ -154,18 +154,18 @@ xset s off -dpms &
 # Hide mouse pointer after 300s of inactivity
 unclutter -idle 300 &
 
-# Force HDMI-1 to the chosen resolution, disable HDMI-2 (if present)
-xrandr \
-  --output HDMI-1 --mode ${RESOLUTION} \
+# Force HDMI-1 resolution, disable HDMI-2
+xrandr \ 
+  --output HDMI-1 --mode ${RESOLUTION} \ 
   --output HDMI-2 --off &
 
-# Minimal window manager
-matchbox-window-manager &
+# Start Openbox
+openbox-session &
 
-# Launch onboard keyboard watcher
-/home/gui/launch_onboard_on_focus.sh &
+# Delay then launch onboard focus‐watcher
+(sleep 5 && /home/gui/launch_onboard_on_focus.sh) &
 
-# Wait a bit to ensure splash is visible
+# Wait a bit for splash
 sleep 3
 
 # Launch Chromium in kiosk mode
@@ -182,7 +182,7 @@ chown gui:gui "$XINITRC"
 chmod 644 "$XINITRC"
 
 #####################
-# 8) Create onboard focus watcher script
+# 8) Create onboard focus watcher
 #####################
 FOCUS_SCRIPT="/home/gui/launch_onboard_on_focus.sh"
 cat <<'EOF' > "$FOCUS_SCRIPT"
@@ -214,9 +214,10 @@ systemctl restart getty@tty1
 
 echo "========================================================"
 echo "Setup complete!"
-echo "TTY1 will auto-login user 'gui'."
+echo "Auto-login: gui on TTY1"
 echo "Resolution: ${RESOLUTION}"
 echo "URL: ${TARGET_URL}"
-echo "Using matchbox-window-manager + Chromium kiosk."
-echo "Onboard will auto-popup when Chromium input is focused."
+echo "Window manager: Openbox"
+echo "Chromium in kiosk + touch enabled"
+echo "Onboard auto-popup when Chromium inputs are focused"
 echo "========================================================"
