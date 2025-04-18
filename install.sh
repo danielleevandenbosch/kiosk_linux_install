@@ -38,22 +38,21 @@ EOF
 echo "Updating package lists..."
 apt-get update -y
 
-PACKAGES=
-(
-  ,xorg
-  ,chromium
-  ,chromium-browser
-  ,unclutter
-  ,openbox
-  ,onboard
-  ,xdotool
-  ,network-manager
-  ,openssh-client
-  ,openssh-server
-  ,zsh
-  ,vim
-  ,neofetch
-  ,htop
+PACKAGES=(
+  xorg
+  chromium
+  chromium-browser
+  unclutter
+  matchbox-window-manager
+  onboard
+  xdotool
+  network-manager
+  openssh-client
+  openssh-server
+  zsh
+  vim
+  neofetch
+  htop
 )
 
 for pkg in "${PACKAGES[@]}"
@@ -62,7 +61,8 @@ do
   then
     echo "Package '$pkg' is already installed."
   else
-    apt-get install -y "$pkg" || echo "Package '$pkg' not found or could not be installed."
+    apt-get install -y "$pkg" \
+      || echo "Package '$pkg' not found or could not be installed."
   fi
 done
 
@@ -83,9 +83,9 @@ fi
 #####################
 # 5) Prompt for resolution + URL
 #####################
-echo "Select a resolution mode for HDMI-1:"
+echo "Select a resolution mode for HDMI-1 (common combos):"
 echo "1) 1080p (1920x1080)"
-echo "2) 4K (3840x2160)"
+echo "2) 4K   (3840x2160)"
 echo "3) Custom"
 
 read -rp "Enter choice [1-3]: " CHOICE
@@ -93,7 +93,7 @@ case "$CHOICE" in
   1) RESOLUTION="1920x1080" ;;
   2) RESOLUTION="3840x2160" ;;
   3)
-    read -rp "Enter custom resolution (e.g. 1280x720): " RESOLUTION
+    read -rp "Enter custom resolution (e.g. 1920x1080): " RESOLUTION
     ;;
   *)
     echo "Invalid choice, defaulting to 1920x1080."
@@ -101,24 +101,23 @@ case "$CHOICE" in
     ;;
 esac
 
-read -rp "Enter URL to open (default: https://example.com): " TARGET_URL
+read -rp "Enter the URL to open in Chromium (default: https://example.com): " TARGET_URL
 TARGET_URL="${TARGET_URL:-https://example.com}"
 
 #####################
 # 6) Create .bash_profile to auto-start X on TTY1
 #####################
 BASH_PROFILE="/home/gui/.bash_profile"
-rm -f "$BASH_PROFILE"
-sudo -u gui tee "$BASH_PROFILE" <<'EOF'
+cat <<'EOF' > "$BASH_PROFILE"
 clear
 
 cat <<'SPLASH'
-  _      _                    _  ___           _
- | |    (_)                  | |/ (_)         | |
- | |     _ _ __  _   ___  __ | ' / _  ___  ___| | __
- | |    | | '_ \| | | \ \/ / |  < | |/ _ \/ __| |/ /
- | |____| | | | | |_| |>  <  | . \| | (_) \__ \   <
- |______|_|_| |_|\__,_/_/\_\ |_|\_\_|\___/|___/_|\_\
+  _      _                    _  ___           _  
+ | |    (_)                  | |/ (_)         | | 
+ | |     _ _ __  _   ___  __ | ' / _  ___  ___| | 
+ | |    | | '_ \| | | \ \/ / |  < | |/ _ \/ __| | 
+ | |____| | | | | |_| |>  <  | . \| | (_) \__ \ | 
+ |______|_|_| |_|\__,_/_/\_\ |_|\_\_|\___/|___/_| 
 
 Daniel Van Den Bosch Kiosk Linux
 https://github.com/danielleevandenbosch/kiosk_linux_install
@@ -140,32 +139,34 @@ then
   startx
 fi
 EOF
-chmod 644 "$BASH_PROFILE"
+
+chown gui:gui "$BASH_PROFILE"
+chmod 644   "$BASH_PROFILE"
 
 #####################
-# 7) Create .xinitrc (replace any existing)
+# 7) Create/replace .xinitrc
 #####################
 XINITRC="/home/gui/.xinitrc"
 rm -f "$XINITRC"
-sudo -u gui tee "$XINITRC" <<EOF
+cat <<EOF > "$XINITRC"
 # Disable screen blanking + power management
 xset s off -dpms &
 
 # Hide mouse pointer after 300s of inactivity
 unclutter -idle 300 &
 
-# Force HDMI-1 resolution, disable HDMI-2
+# Force HDMI-1 to the chosen resolution, disable HDMI-2
 xrandr \
   --output HDMI-1 --mode ${RESOLUTION} \
   --output HDMI-2 --off &
 
-# Start Openbox
-openbox-session &
+# Minimal window manager
+matchbox-window-manager &
 
-# Delay then launch onboard focus‑watcher
-(sleep 5 && /home/gui/launch_onboard_on_focus.sh) &
+# Launch onboard keyboard watcher
+/home/gui/launch_onboard_on_focus.sh &
 
-# Wait a bit for splash
+# Wait a bit to ensure splash is visible
 sleep 3
 
 # Launch Chromium in kiosk mode
@@ -177,19 +178,21 @@ ${CHROMIUM_CMD} \
   --enable-touch-events \
   ${TARGET_URL}
 EOF
-chmod 644 "$XINITRC"
+
+chown gui:gui "$XINITRC"
+chmod 644   "$XINITRC"
 
 #####################
-# 8) Create onboard focus watcher (replace any existing)
+# 8) Create/replace onboard focus watcher
 #####################
 FOCUS_SCRIPT="/home/gui/launch_onboard_on_focus.sh"
 rm -f "$FOCUS_SCRIPT"
-sudo -u gui tee "$FOCUS_SCRIPT" <<'EOF'
+cat <<'EOF' > "$FOCUS_SCRIPT"
 #!/bin/bash
 while true
 do
-    name=\$(xdotool getwindowfocus getwindowname 2>/dev/null)
-    if echo "\$name" | grep -qiE 'chromium|search|input|form|address'
+    name=$(xdotool getwindowfocus getwindowname 2>/dev/null)
+    if echo "$name" | grep -qiE 'chromium|search|input|form|address'
     then
         if ! pgrep -x onboard >/dev/null
         then
@@ -201,7 +204,9 @@ do
     sleep 1
 done
 EOF
+
 chmod +x "$FOCUS_SCRIPT"
+chown    gui:gui "$FOCUS_SCRIPT"
 
 #####################
 # 9) Reload systemd, restart getty@tty1
@@ -211,11 +216,11 @@ systemctl restart getty@tty1
 
 echo "========================================================"
 echo "Setup complete!"
-echo "Auto-login: gui on TTY1"
+echo "TTY1 will auto-login user 'gui'."
 echo "Resolution: ${RESOLUTION}"
 echo "URL: ${TARGET_URL}"
-echo "Window manager: Openbox"
-echo "Chromium in kiosk + touch enabled"
-echo "Onboard auto-popup when Chromium inputs are focused"
+echo "Using matchbox-window-manager + Chromium kiosk."
+echo "Onboard will auto-popup when Chromium input is focused."
 echo "========================================================"
+
 
