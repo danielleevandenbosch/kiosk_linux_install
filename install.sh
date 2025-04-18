@@ -1,24 +1,27 @@
 #!/usr/bin/env bash
 # Daniel Van Den Bosch — kiosk_linux_install
+# (continues even when some packages can’t be installed)
 
-set -e
-
-# ──────────────────────────────────── 0. must run as root
+# must run as root
 if [ "$(id -u)" -ne 0 ]
 then
-    echo "Run as root or via sudo."
-    exit 1
+  echo "Run this script as root (sudo)."
+  exit 1
 fi
 
-# ──────────────────────────────────── 1. create gui user
+#####################
+# 1) create gui user
+#####################
 if ! id -u gui >/dev/null 2>&1
 then
-    useradd -m -s /bin/bash gui
-    echo "gui:gui" | chpasswd
+  useradd -m -s /bin/bash gui
+  echo "gui:gui" | chpasswd
 fi
 usermod -aG dialout gui
 
-# ──────────────────────────────────── 2. autologin on tty1
+#####################
+# 2) autologin on tty1
+#####################
 mkdir -p /etc/systemd/system/getty@tty1.service.d
 cat <<EOF > /etc/systemd/system/getty@tty1.service.d/autologin.conf
 [Service]
@@ -26,8 +29,10 @@ ExecStart=
 ExecStart=-/sbin/agetty --autologin gui --noclear %I \$TERM
 EOF
 
-# ──────────────────────────────────── 3. packages
-echo "Updating apt lists…"
+#####################
+# 3) install packages
+#####################
+echo "Updating apt lists..."
 apt-get update -y
 
 PACKAGES=(
@@ -46,32 +51,52 @@ PACKAGES=(
   neofetch
   htop
 )
-for p in "${PACKAGES[@]}"
+
+for pkg in "${PACKAGES[@]}"
 do
-    dpkg -s "$p" &>/dev/null || apt-get install -y "$p"
+  if dpkg -s "$pkg" &>/dev/null
+  then
+    echo "Package '$pkg' already installed."
+  else
+    echo "Installing $pkg …"
+    apt-get install -y "$pkg" \
+      || echo "⚠️  Package '$pkg' not available—continuing."
+  fi
 done
 
-# ──────────────────────────────────── 4. chromium binary
-if dpkg -s chromium &>/dev/null
-then CHROME=chromium
-elif dpkg -s chromium-browser &>/dev/null
-then CHROME=chromium-browser
-else echo "Chromium not found"; exit 1
+#####################
+# 4) find chromium binary
+#####################
+if command -v chromium >/dev/null
+then
+  CHROME_CMD="chromium"
+elif command -v chromium-browser >/dev/null
+then
+  CHROME_CMD="chromium-browser"
+else
+  echo "❌ Neither 'chromium' nor 'chromium-browser' is installed. Exiting."
+  exit 1
 fi
 
-# ──────────────────────────────────── 5. resolution + URL
-echo "1) 1080p  2) 4K  3) custom"
-read -rp "Choose [1‑3]: " C
-case $C in
-  1) RES=1920x1080 ;;
-  2) RES=3840x2160 ;;
-  3) read -rp "Resolution: " RES ;;
-  *) RES=1920x1080 ;;
+#####################
+# 5) resolution + URL
+#####################
+echo "Select HDMI‑1 resolution:"
+echo "1) 1080p   2) 4K   3) custom"
+read -rp "Choice [1‑3]: " CHOICE
+case "$CHOICE" in
+  1) RESOLUTION="1920x1080" ;;
+  2) RESOLUTION="3840x2160" ;;
+  3) read -rp "Custom resolution: " RESOLUTION ;;
+  *) RESOLUTION="1920x1080" ;;
 esac
-read -rp "URL (default https://example.com): " URL
-URL=${URL:-https://example.com}
 
-# ──────────────────────────────────── 6. .bash_profile
+read -rp "URL to open (default https://example.com): " TARGET_URL
+TARGET_URL="${TARGET_URL:-https://example.com}"
+
+#####################
+# 6) .bash_profile
+#####################
 sudo -u gui tee /home/gui/.bash_profile >/dev/null <<'EOF'
 clear
 echo "Kiosk booting…"
@@ -80,38 +105,42 @@ if [[ -z $DISPLAY && $(tty) = /dev/tty1 ]]; then startx; fi
 EOF
 chmod 644 /home/gui/.bash_profile
 
-# ──────────────────────────────────── 7. .xinitrc  (replace)
+#####################
+# 7) .xinitrc
+#####################
 sudo -u gui tee /home/gui/.xinitrc >/dev/null <<EOF
-# disable DPMS / blanking
+# disable blanking
 xset s off -dpms &
 
-# hide pointer after 5 min
+# hide pointer
 unclutter -idle 300 &
 
-# force resolution
-xrandr --output HDMI-1 --mode ${RES} --output HDMI-2 --off &
+# set resolution
+xrandr --output HDMI-1 --mode ${RESOLUTION} --output HDMI-2 --off &
 
-# tiny WM
+# window manager
 matchbox-window-manager &
 
-# launch watcher after WM is ready
+# launch watcher after 5 s
 (sleep 5 && /home/gui/launch_onboard_on_focus.sh) &
 
-# little pause for splash
+# splash delay
 sleep 3
 
-# foreground chromium
-exec ${CHROME} \
+# run chromium in foreground
+exec ${CHROME_CMD} \
   --kiosk \
   --no-first-run \
   --disable-infobars \
   --disable-session-crashed-bubble \
   --enable-touch-events \
-  "${URL}"
+  "${TARGET_URL}"
 EOF
 chmod 644 /home/gui/.xinitrc
 
-# ──────────────────────────────────── 8. focus watcher  (replace)
+#####################
+# 8) focus‑watcher
+#####################
 sudo -u gui tee /home/gui/launch_onboard_on_focus.sh >/dev/null <<'EOF'
 #!/bin/bash
 LOG=/home/gui/onboard-focus.log
@@ -119,38 +148,33 @@ echo "===== watcher start $(date) =====" > "$LOG"
 
 while true
 do
-    title=$(xdotool getwindowfocus getwindowname     2>/dev/null)
-    class=$(xdotool getwindowfocus getwindowclassname 2>/dev/null)
-    echo "$(date +%T)  class:<$class>  title:<$title>" >> "$LOG"
+  class=$(xdotool getwindowfocus getwindowclassname 2>/dev/null)
+  title=$(xdotool getwindowfocus getwindowname     2>/dev/null)
+  echo "$(date +%T)  class:<$class> title:<$title>" >> "$LOG"
 
-    if echo "$class" | grep -qi chromium
-    then
-        if ! pgrep -x onboard >/dev/null
-        then
-            echo "$(date +%T)  launching onboard" >> "$LOG"
-            onboard &
-        fi
-    else
-        if pgrep -x onboard >/dev/null
-        then
-            echo "$(date +%T)  killing onboard" >> "$LOG"
-            pkill onboard
-        fi
-    fi
-    sleep 1
+  if echo "$class" | grep -qi chromium
+  then
+      pgrep -x onboard >/dev/null || { echo "$(date +%T) launching"; onboard & }
+  else
+      pkill onboard 2>/dev/null && echo "$(date +%T) killing onboard" >> "$LOG"
+  fi
+  sleep 1
 done
 EOF
 chmod +x /home/gui/launch_onboard_on_focus.sh
 
-# ──────────────────────────────────── 9. reload getty
+#####################
+# 9) reload getty
+#####################
 systemctl daemon-reload
 systemctl restart getty@tty1
 
-echo "===== Setup complete ====="
-echo "Auto‑login user: gui"
-echo "Resolution       : $RES"
-echo "URL              : $URL"
-echo "Matchbox + Chromium kiosk with auto onscreen keyboard"
-echo "Watcher logs at  : /home/gui/onboard-focus.log"
-
-
+echo "========================================="
+echo "Setup complete!"
+echo "User auto‑login : gui"
+echo "Resolution      : $RESOLUTION"
+echo "URL             : $TARGET_URL"
+echo "Chromium binary : $CHROME_CMD"
+echo "On‑screen keyboard will auto‑popup."
+echo "Focus log       : /home/gui/onboard-focus.log"
+echo "========================================="
