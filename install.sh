@@ -139,9 +139,13 @@ cat <<'SPLASH'
 
 Daniel Van Den Bosch Kiosk Linux
 https://github.com/danielleevandenbosch/kiosk_linux_install
+
 SPLASH
 
-sleep 3
+echo "battery at: " | figlet 
+acpi | grep -oP '[0-9]+%' | figlet
+
+sleep 30
 
 if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]
 then
