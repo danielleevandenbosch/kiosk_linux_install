@@ -30,13 +30,9 @@ chmod u+s "$WESTON_LAUNCH_BIN"
 echo "• Using weston-launch: $WESTON_LAUNCH_BIN"
 
 # ── 4. prompt ──────────────────────────────────────────────
-read -rp "Resolution (WxH) [1920x1080]: " RES
-RES=${RES:-1920x1080}
-[[ $RES =~ ^[0-9]+x[0-9]+$ ]] || die "Bad resolution"
-W=${RES%x*}; H=${RES#*x}
-read -rp "URL to open [https://example.com]: " URL
-URL=${URL:-https://example.com}
+eval "$(bash ./get_kiosk_input.sh)" || die "Invalid input"
 echo "• Using resolution ${W}x${H}, URL=$URL"
+
 
 # ── 5. weston.ini ────────────────────────────────────────
 KEYBD=$(dpkg -L weston | grep -m1 weston-keyboard) || die "weston-keyboard not found"
