@@ -27,6 +27,9 @@ usermod -aG dialout,video gui
 # ── 1.5. TTY permissions ───────────────────────────────────────────
 bash ./fix_tty_permissions.sh || die "Failed to set TTY permissions"
 
+# ── 1.55. Fix TTY1 udev rule ────────────────────────────────
+bash ./setup_tty1_permissions.sh || die "Failed to write TTY udev rule"
+
 # ── 1.6. Copy stop_display_managers.sh to gui ──────────────────────
 bash ./copy_stop_display_managers_to_gui.sh || die "Failed to copy display manager script"
 
