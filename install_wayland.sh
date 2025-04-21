@@ -49,6 +49,12 @@ as_gui "cat > ~/.bash_profile <<'BP'
 BP"
 chmod 644 /home/gui/.bash_profile
 
-# ── 8. finish ────────────────────────────────────────
+# ── 8. check_weston_backend ────────────────────────────────────────
+log "Checking DRM backend availability..."
+bash ./check_weston_backend.sh || die "Backend check failed"
+
+
+
+# ── 9. finish ────────────────────────────────────────
 bash ./install_complete_message.sh "$WESTON_LAUNCH_BIN"
 
