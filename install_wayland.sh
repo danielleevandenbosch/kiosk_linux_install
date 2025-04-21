@@ -16,6 +16,10 @@ as_gui() { sudo -u gui bash -c "$*"; }
 log "Calling dependency installer..."
 bash ./install_wayland_dependancies.sh || die "Dependency script failed."
 
+
+# ── 0. Stop conflicting display managers ──────────────────────────────
+bash ./stop_display_managers.sh || die "Failed to stop display managers"
+
 # ── 1. user gui ────────────────────────────────────────────────────
 id -u gui &>/dev/null || { useradd -m -s /bin/bash gui; echo gui:gui | chpasswd; }
 usermod -aG dialout,video gui
@@ -52,8 +56,6 @@ chmod 644 /home/gui/.bash_profile
 # ── 8. check_weston_backend ────────────────────────────────────────
 log "Checking DRM backend availability..."
 bash ./check_weston_backend.sh || die "Backend check failed"
-
-
 
 # ── 9. finish ────────────────────────────────────────
 bash ./install_complete_message.sh "$WESTON_LAUNCH_BIN"
