@@ -13,15 +13,16 @@ cat > /home/gui/start_kiosk.sh <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
 
-export XDG_RUNTIME_DIR=/run/user/\$(id -u)
+export XDG_RUNTIME_DIR=/run/user/$(id -u)
 export QT_QPA_PLATFORM=wayland
 export WESTON_DEBUG=1
 LOG=\$HOME/kiosk-weston.log
 : > \$LOG
 chmod 664 \$LOG
 
+# Removed invalid --width and --height options
 BACKEND='--backend=drm-backend.so'
-ARGS="\$BACKEND --width=$W --height=$H --idle-time=0 --debug"
+ARGS="\$BACKEND --idle-time=0 --debug"
 echo "[kiosk] $WESTON_LAUNCH_BIN -- \$ARGS" >> \$LOG
 
 $WESTON_LAUNCH_BIN -- \$ARGS >> \$LOG 2>&1 &
