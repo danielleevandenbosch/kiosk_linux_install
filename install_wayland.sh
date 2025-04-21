@@ -21,12 +21,8 @@ id -u gui &>/dev/null || { useradd -m -s /bin/bash gui; echo gui:gui | chpasswd;
 usermod -aG dialout,video gui
 
 # ── 2. autologin tty1 ───────────────────────────────────────────
-mkdir -p /etc/systemd/system/getty@tty1.service.d
-cat >/etc/systemd/system/getty@tty1.service.d/autologin.conf <<'EOF'
-[Service]
-ExecStart=
-ExecStart=-/sbin/agetty --autologin gui --noclear %I $TERM
-EOF
+bash ./setup_autologin_tty1.sh || die "Autologin setup failed."
+
 
 # ── 3. weston-launch detection ───────────────────────────────────────────
 WESTON_LAUNCH_BIN="$(bash ./weston_check.sh)"
