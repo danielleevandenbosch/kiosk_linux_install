@@ -87,11 +87,5 @@ BP"
 chmod 644 /home/gui/.bash_profile
 
 # ── 8. finish ────────────────────────────────────────
-systemctl daemon-reload
-systemctl restart getty@tty1
+bash ./install_complete_message.sh "$WESTON_LAUNCH_BIN"
 
-echo
-echo "===== INSTALL COMPLETE – REBOOT NOW ====="
-echo "• Weston will launch via $WESTON_LAUNCH_BIN"
-echo "• Logs will appear in /home/gui/kiosk-weston.log"
-echo "• If it fails: last 60 lines dump to tty1"
