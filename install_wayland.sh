@@ -35,50 +35,10 @@ echo "• Using resolution ${W}x${H}, URL=$URL"
 
 
 # ── 5. weston.ini ────────────────────────────────────────
-KEYBD=$(dpkg -L weston | grep -m1 weston-keyboard) || die "weston-keyboard not found"
-as_gui "mkdir -p ~/.config && cat > ~/.config/weston.ini <<INI
-[core]
-idle-time=0
-[keyboard]
-command=$KEYBD
-INI"
+bash ./generate_weston_ini.sh || die "Failed to create weston.ini"
 
 # ── 6. start_kiosk.sh ────────────────────────────────────────
-as_gui "cat > ~/start_kiosk.sh <<SK
-#!/usr/bin/env bash
-export XDG_RUNTIME_DIR=/run/user/\$(id -u)
-export QT_QPA_PLATFORM=wayland
-export WESTON_DEBUG=1
-LOG=\$HOME/kiosk-weston.log
-: > \$LOG
-chmod 664 \$LOG
-
-BACKEND='--backend=drm-backend.so'
-ARGS="\$BACKEND --width=$W --height=$H --idle-time=0 --debug"
-echo "[kiosk] \$WESTON_LAUNCH_BIN -- \$ARGS" >>\$LOG
-
-\$WESTON_LAUNCH_BIN -- \$ARGS >>\$LOG 2>&1 &
-PID=\$!
-
-for i in {1..6}; do [ -S \$XDG_RUNTIME_DIR/wayland-0 ] && READY=1 && break; sleep 1; done
-
-if [ "\$READY" != 1 ]; then
-  chown \$(id -u):\$(id -g) \$LOG
-  echo "-------------------------------------------------" >/dev/tty1
-  echo "Weston FAILED – last 60 log lines:" >/dev/tty1
-  echo "-------------------------------------------------" >/dev/tty1
-  tail -n 60 \$LOG | tee /dev/tty1
-  kill \$PID 2>/dev/null || true
-  exit 1
-fi
-
-echo "[kiosk] Weston ready" >> \$LOG
-maliit-server >> \$LOG 2>&1 &
-exec chromium --ozone-platform=wayland --enable-wayland-ime --kiosk \
-     --no-first-run --disable-infobars --disable-session-crashed-bubble \
-     --enable-touch-events "$URL"
-SK
-chmod +x ~/start_kiosk.sh"
+bash ./generate_start_kiosk.sh "$W" "$H" "$URL" "$WESTON_LAUNCH_BIN"
 
 # ── 7. bash_profile ────────────────────────────────────────
 as_gui "cat > ~/.bash_profile <<'BP'
