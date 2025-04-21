@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # fix_runtime_dir.sh
-# Ensures /run/user/1001 exists and is properly owned by gui
-# Required for Wayland-based sessions to initialize cleanly under a non-root user like 'gui'
+# Ensures /run/user/<UID> exists and is properly owned by gui
+# This directory is required by Wayland/Weston to create session-related sockets
 
 set -euo pipefail
 
 USER=gui
-UID=1001
-RUNTIME_DIR="/run/user/$UID"
+USER_UID=$(id -u "$USER")
+RUNTIME_DIR="/run/user/$USER_UID"
 
 log() {
   echo -e "[runtime-fix] $*"
@@ -15,34 +15,43 @@ log() {
 
 # ----------------------------------------------------------------------
 # Why this is necessary:
-# Wayland expects a per-user runtime directory (typically /run/user/<UID>)
-# where it can store session-related sockets, such as the 'wayland-0' socket.
+# Wayland compositors like Weston require a user-specific runtime directory
+# at /run/user/<UID>, where they place IPC sockets like wayland-0.
 #
-# Normally, systemd-logind creates this directory when the user logs in via
-# a display manager or loginctl (PAM session), but in a minimal kiosk setup
-# where you're auto-logging into TTY1 without systemd's full login stack,
-# it doesn't get created automatically.
+# This directory is normally created by systemd-logind during a PAM session
+# (e.g., when using a full display manager). But in minimal setups that auto-login
+# on tty1 without systemd-logind involvement, it doesn't get created.
 #
-# Without this, Weston will fail to launch with errors like:
+# Without this, Weston fails to start with:
 #   "Failed to create display: Broken pipe"
-#   or
 #   "Unable to bind to /run/user/<UID>/wayland-0"
 # ----------------------------------------------------------------------
 
-# 1. Create the runtime directory if it doesn't exist
+# 1. Create runtime directory if needed
 if [ ! -d "$RUNTIME_DIR" ]; then
-  log "Creating $RUNTIME_DIR"
+  log "Creating $RUNTIME_DIR (likely not created by systemd)"
   mkdir -p "$RUNTIME_DIR"
+else
+  log "$RUNTIME_DIR already exists"
 fi
 
-# 2. Set proper ownership so that the 'gui' user has access
-# This is crucial because Weston will drop privileges and try to write
-# files (like the display socket) into this directory.
-log "Setting ownership and permissions on $RUNTIME_DIR"
+# 2. Set ownership and permissions
+log "Assigning $USER:$USER ownership to $RUNTIME_DIR"
 chown "$USER:$USER" "$RUNTIME_DIR"
 
-# 3. Ensure directory is private to the user
-# The standard permission for /run/user/<UID> is 0700 — readable and writable only by the owner.
+log "Setting 0700 permissions to restrict access"
 chmod 700 "$RUNTIME_DIR"
 
-log "✅ Runtime directory $RUNTIME_DIR fixed."
+# 3. Confirm write access
+if ! sudo -u "$USER" test -w "$RUNTIME_DIR"; then
+  log "⚠️  Warning: $USER does not have write access to $RUNTIME_DIR"
+  exit 1
+fi
+
+# 4. Optional: Check XDG_RUNTIME_DIR is set
+if ! sudo -u "$USER" env | grep -q XDG_RUNTIME_DIR; then
+  log "⚠️  Note: XDG_RUNTIME_DIR is not set for user '$USER'."
+  log "You'll want to export it to $RUNTIME_DIR in your environment before launching Weston."
+fi
+
+log "✅ Runtime directory $RUNTIME_DIR is properly configured."
