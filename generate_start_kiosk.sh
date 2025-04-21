@@ -13,7 +13,7 @@ cat > /home/gui/start_kiosk.sh <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
 
-export XDG_RUNTIME_DIR=/run/user/$(id -u)
+export XDG_RUNTIME_DIR=/run/user/\$(id -u)
 export QT_QPA_PLATFORM=wayland
 export WESTON_DEBUG=1
 LOG=\$HOME/kiosk-weston.log
