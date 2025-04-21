@@ -30,6 +30,9 @@ bash ./fix_tty_permissions.sh || die "Failed to set TTY permissions"
 # ── 1.6. Copy stop_display_managers.sh to gui ──────────────────────
 bash ./copy_stop_display_managers_to_gui.sh || die "Failed to copy display manager script"
 
+# ── 1.7. Allow gui to reboot without password ──────────────────────
+bash ./enable_gui_reboot.sh || die "Failed to allow gui to reboot"
+
 
 # ── 2. autologin tty1 ───────────────────────────────────────────
 bash ./setup_autologin_tty1.sh || die "Autologin setup failed."
