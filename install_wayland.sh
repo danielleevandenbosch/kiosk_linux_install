@@ -52,10 +52,7 @@ bash ./generate_weston_ini.sh || die "Failed to create weston.ini"
 bash ./generate_start_kiosk.sh "$W" "$H" "$URL" "$WESTON_LAUNCH_BIN"
 
 # ── 7. bash_profile ────────────────────────────────────────
-as_gui "cat > ~/.bash_profile <<'BP'
-[[ -z \$WAYLAND_DISPLAY && \$(tty) = /dev/tty1 ]] && ~/start_kiosk.sh
-BP"
-chmod 644 /home/gui/.bash_profile
+bash ./generate_bash_profile.sh || die "Failed to write .bash_profile"
 
 # ── 8. check_weston_backend ────────────────────────────────────────
 log "Checking DRM backend availability..."
