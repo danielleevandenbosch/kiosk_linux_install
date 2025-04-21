@@ -20,6 +20,9 @@ bash ./install_wayland_dependancies.sh || die "Dependency script failed."
 id -u gui &>/dev/null || { useradd -m -s /bin/bash gui; echo gui:gui | chpasswd; }
 usermod -aG dialout,video gui
 
+# ── 1.5. TTY permissions ───────────────────────────────────────────
+bash ./fix_tty_permissions.sh || die "Failed to set TTY permissions"
+
 # ── 2. autologin tty1 ───────────────────────────────────────────
 bash ./setup_autologin_tty1.sh || die "Autologin setup failed."
 
