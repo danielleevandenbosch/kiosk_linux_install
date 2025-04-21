@@ -23,7 +23,7 @@ chmod 664 \$LOG
 # Removed invalid --width and --height options
 BACKEND='--backend=drm-backend.so'
 ARGS="\$BACKEND --idle-time=0 --debug"
-echo "[kiosk] $WESTON_LAUNCH_BIN >> \$LOG
+echo "[kiosk] $WESTON_LAUNCH_BIN" >> \$LOG
 
 $WESTON_LAUNCH_BIN >> \$LOG 2>&1 &
 PID=\$!
