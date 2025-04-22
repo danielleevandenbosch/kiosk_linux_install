@@ -39,6 +39,14 @@ else
     log "'$USER' is already in 'video' group"
 fi
 
+if ! id -nG "$USER" | grep -qw seat
+then
+    log "Adding '$USER' to group 'seat'"
+    usermod -aG seat "$USER"
+else
+    log "'$USER' is already in 'seat' group"
+fi
+
 if ! id -nG "$USER" | grep -qw input
 then
     log "Adding '$USER' to group 'input'"
