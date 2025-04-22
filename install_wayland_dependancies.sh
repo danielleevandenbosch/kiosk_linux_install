@@ -43,6 +43,8 @@ $REMOVE_CMD chromium-browser || true
 PACKAGES=(
   dbus
   maliit-keyboard
+  weston
+  foot
 )
 
 # Weston or Weston-launch
