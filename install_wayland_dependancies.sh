@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # install_wayland_dependancies.sh
-# Installs all required packages for Wayland kiosk + admin tools
+# Installs all required packages for Wayland kiosk + admin tools and enables seatd
 
 set -euo pipefail
 
@@ -79,6 +79,7 @@ PACKAGES+=(
   figlet
   acpi
   flatpak
+  seatd
 )
 
 log "Installing packages: ${PACKAGES[*]}"
@@ -86,11 +87,15 @@ $INSTALL_CMD "${PACKAGES[@]}"
 
 # ── 2. Install Chromium via Flatpak ──────────────────────────────────────
 log "Installing Chromium from Flatpak..."
-
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 flatpak install -y flathub org.chromium.Chromium
 
-log "✅ Flatpak Chromium installed successfully"
-log "✅ Dependencies installed"
+# ── 3. Enable seatd daemon ───────────────────────────────────────────────
+log "Enabling seatd.service..."
+systemctl enable seatd.service
+systemctl start seatd.service
+log "✅ seatd is now enabled and running."
+
+log "✅ All dependencies installed and seatd activated."
 exit 0
 
