@@ -1,3 +1,4 @@
+
 #!/usr/bin/env bash
 #
 # kiosk_start.sh — unified launcher for Wayland kiosk
@@ -32,7 +33,7 @@ log "Setting owner to $GUI_USER:$GUI_USER and mode 0700"
 chown "$GUI_USER:$GUI_USER" "$RUNTIME_DIR"
 chmod 700 "$RUNTIME_DIR"
 
-# ─── 2. Launch Weston if needed ─────────────────────────────────────────
+# ─── 2. Launch Weston if needed ─────────────────────────────────────────asdf
 # check if weston already running under gui
 if ! pgrep -u "$GUI_UID" -x weston >/dev/null; then
   log "Starting Weston as $GUI_USER..."
