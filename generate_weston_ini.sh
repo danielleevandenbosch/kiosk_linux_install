@@ -1,15 +1,10 @@
 #!/usr/bin/env bash
 # generate_weston_ini.sh
 # -----------------------------------------------------------------------------
-# This script creates a Weston configuration file (~/.config/weston.ini)
-# for the 'gui' user. Weston is a reference Wayland compositor, and this
-# file is used to configure session-level behavior for the Wayland session.
-#
-# It ensures:
-# - No screen blanking (idle-time=0)
-# - Specific output resolution and monitor name (can be auto-detected)
-# - On-screen keyboard is launched for kiosk/touch environments
-# - Proper Weston shell is used (desktop-shell.so or kiosk-shell.so)
+# Creates a well-structured Weston configuration file (~/.config/weston.ini)
+# for the 'gui' user. This file customizes the Wayland session launched
+# by Weston with kiosk-appropriate defaults and ensures compatibility with
+# touchscreens, idle settings, and specific display configurations.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -18,18 +13,23 @@ log() {
   echo -e "[weston-ini] $*"
 }
 
-# Locate weston-keyboard binary
+USER=gui
+CONFIG_PATH="/home/$USER/.config"
+INI_FILE="$CONFIG_PATH/weston.ini"
+
+# 1. Locate the weston-keyboard binary
 KEYBD=$(dpkg -L weston | grep -m1 weston-keyboard) || {
-  echo "❌ weston-keyboard not found" >&2
+  log "❌ Error: weston-keyboard not found. Is Weston installed?"
   exit 1
 }
 
-# Defaults
+# 2. Set default or inherited resolution and shell type
 RES_WIDTH="${RES_WIDTH:-1920}"
 RES_HEIGHT="${RES_HEIGHT:-1080}"
-OUTPUT_NAME="${OUTPUT_NAME:-}"
+WESTON_SHELL="${WESTON_SHELL:-desktop-shell.so}"  # Can be kiosk-shell.so
 
-# Auto-detect output name if not set
+# 3. Detect connected output if none specified
+OUTPUT_NAME="${OUTPUT_NAME:-}"
 if [ -z "$OUTPUT_NAME" ]; then
   DETECTED=$(weston-info 2>/dev/null | grep -i connector | grep -m1 connected | awk '{print $2}')
   OUTPUT_NAME="${DETECTED:-HDMI-A-1}"
@@ -38,30 +38,34 @@ else
   log "Using predefined output: $OUTPUT_NAME"
 fi
 
-# Choose shell type
-WESTON_SHELL="${WESTON_SHELL:-desktop-shell.so}"  # or kiosk-shell.so
-
-# Write config
-CONFIG_PATH="/home/gui/.config"
-INI_FILE="$CONFIG_PATH/weston.ini"
+# 4. Ensure the .config directory exists and is owned by the gui user
+log "Creating $CONFIG_PATH if missing"
 mkdir -p "$CONFIG_PATH"
+chown "$USER:$USER" "$CONFIG_PATH"
 
+# 5. Write the Weston configuration to weston.ini
+log "Writing configuration to $INI_FILE"
 cat > "$INI_FILE" <<EOF
 [core]
+# Disable screen blanking / power save
 idle-time=0
 
 [output]
+# Force display resolution and monitor output
 name=$OUTPUT_NAME
 mode=${RES_WIDTH}x${RES_HEIGHT}
 
 [keyboard]
+# Start the Weston on-screen keyboard
 command=$KEYBD
 
 [shell]
+# Set the shell to either desktop-shell.so or kiosk-shell.so
 shell=$WESTON_SHELL
 EOF
 
-chown gui:gui "$INI_FILE"
+# 6. Set permissions and ownership
+chown "$USER:$USER" "$INI_FILE"
 chmod 644 "$INI_FILE"
 
-log "✅ Generated $INI_FILE"
+log "✅ Successfully generated Weston configuration at $INI_FILE"
