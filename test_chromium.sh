@@ -5,4 +5,11 @@ export WAYLAND_DISPLAY=$(basename "$SOCKET")
 sudo -u gui \
   XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \
   WAYLAND_DISPLAY=$WAYLAND_DISPLAY \
-  dbus-run-session -- flatpak run org.chromium.Chromium --ozone-platform=wayland
+  dbus-run-session -- \
+  flatpak run \
+    --filesystem=home \
+    --talk-name=org.freedesktop.portal.Fallback \
+    --env=GDK_BACKEND=wayland \
+    org.chromium.Chromium \
+    --ozone-platform=wayland \
+    --disable-features=UseOzonePlatformForVideo
