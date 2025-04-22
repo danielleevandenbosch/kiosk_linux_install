@@ -39,6 +39,9 @@ bash ./enable_gui_reboot.sh || die "Failed to allow gui to reboot"
 # ── 1.8. Fix /run/user/1001 runtime dir ───────────────────────────────
 bash ./fix_runtime_dir.sh || die "Failed to set up /run/user/1001"
 
+# ── 1.85. Install GUI font toggle scripts ───────────────────────────────
+bash ./install_gui_font_scripts.sh || die "Failed to set up font toggle scripts"
+
 # ── 2. autologin tty1 ───────────────────────────────────────────
 bash ./setup_autologin_tty1.sh || die "Autologin setup failed."
 
