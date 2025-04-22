@@ -1,27 +1,34 @@
 #!/usr/bin/env bash
-# test_foot.sh – Run foot terminal if Weston is running
+# test_foot2.sh
+# ─────────────────────────────────────────────────────────────────────────────
+# Test launching a Wayland-native app (foot) under a running Weston session.
+#
+# Usage:  sudo bash test_wayland_app.sh
+# You should see a Foot terminal appear in the Weston window.
+# ─────────────────────────────────────────────────────────────────────────────
 
 set -euo pipefail
 
-echo "[foot-test] 🔧 Starting test_foot.sh"
+# 1) Find the GUI user's UID and runtime directory
+GUI_UID=$(id -u gui)
+RUNTIME_DIR="/run/user/$GUI_UID"
 
-# Set up socket search path
-SOCKET_DIR="/run/user/$(id -u)"
-echo "[foot-test] 🔍 Looking for Wayland socket in: $SOCKET_DIR"
+echo "[test] Using runtime dir: $RUNTIME_DIR"
 
-# Find Wayland socket (wayland-0, wayland-1, etc.)
-WAYLAND_SOCKET=$(find "$SOCKET_DIR" -maxdepth 1 -type s -name 'wayland-*' 2>/dev/null | head -n1)
-
-if [[ -z "$WAYLAND_SOCKET" ]]; then
-  echo "[foot-test] ❌ No Wayland socket found. Weston is likely not running."
+# 2) Locate the first wayland socket (e.g. wayland-0, wayland-1, etc.)
+SOCKET_PATH=$(find "$RUNTIME_DIR" -maxdepth 1 -type s -name 'wayland-*' | head -n1)
+if [ -z "$SOCKET_PATH" ]; then
+  echo "[test] ❌ No Wayland socket found under $RUNTIME_DIR" >&2
   exit 1
 fi
 
-echo "[foot-test] ✅ Found Wayland socket: $WAYLAND_SOCKET"
+WAYLAND_DISPLAY=$(basename "$SOCKET_PATH")
+echo "[test] Found Wayland socket: $SOCKET_PATH (DISPLAY=$WAYLAND_DISPLAY)"
 
-# Export environment variables needed by Wayland clients
-export XDG_RUNTIME_DIR="$SOCKET_DIR"
-export WAYLAND_DISPLAY="$(basename "$WAYLAND_SOCKET")"
+# 3) Export env for Wayland clients
+export XDG_RUNTIME_DIR="$RUNTIME_DIR"
+export WAYLAND_DISPLAY
 
-echo "[foot-test] 🚀 Attempting to launch foot using display: $WAYLAND_DISPLAY"
-foot || echo "[foot-test] ❌ Foot failed to launch!"
+# 4) Launch Foot as the 'gui' user
+echo "[test] Launching foot..."
+sudo -u gui foot
