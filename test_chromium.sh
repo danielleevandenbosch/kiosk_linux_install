@@ -30,13 +30,14 @@ echo "[chromium-test] 🚀 Launching Chromium (Wayland mode)..."
 
 # Run Chromium in Flatpak with sandbox bypass for kiosk
 sudo -u gui \
-  XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
-  WAYLAND_DISPLAY="$WAYLAND_DISPLAY" \
-  dbus-run-session -- \
-  flatpak run \
-    --filesystem=home \
-    --talk-name=org.freedesktop.portal.Fallback \
-    --env=GDK_BACKEND=wayland \
-    org.chromium.Chromium \
-    --ozone-platform=wayland \
-    --disable-features=UseOzonePlatformForVideo
+  env XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
+      WAYLAND_DISPLAY="$WAYLAND_DISPLAY" \
+      flatpak run \
+        --env=GDK_BACKEND=wayland \
+        --env=GTK_USE_PORTAL=0 \
+        --env=MOZ_ENABLE_WAYLAND=1 \
+        --nosocket=xdg-doc \
+        org.chromium.Chromium \
+        --ozone-platform=wayland \
+        --disable-features=UseOzonePlatformForVideo \
+        --enable-features=UseOzonePlatform
