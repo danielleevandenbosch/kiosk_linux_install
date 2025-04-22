@@ -5,10 +5,8 @@ set -euo pipefail
 LOGDIR=/run/user/1001
 LOGFILE=$LOGDIR/kiosk.log
 USER=gui
-UID=1001
+USER_UID=1001           # ← your custom var, not Bash’s built‑in
 WAYLAND_SOCKET=wayland-0
-
-CLIENT=( "${@:-foot}" )
 
 log() { echo "[kiosk] $*"; }
 
@@ -27,10 +25,13 @@ log "Launching Weston as $USER"
 sudo -u "$USER" env \
     XDG_RUNTIME_DIR="$LOGDIR" \
     WESTON_DEBUG=1 \
-    weston --backend=drm-backend.so --idle-time=0 --socket="$WAYLAND_SOCKET" \
+    weston \
+      --backend=drm-backend.so \
+      --idle-time=0 \
+      --socket="$WAYLAND_SOCKET" \
       >>"$LOGFILE" 2>&1 &
 
-# 4) Wait for wayland-0 socket
+# 4) Wait for wayland socket
 log "Waiting for Wayland socket…"
 for i in $(seq 1 20); do
   if [ -S "$LOGDIR/$WAYLAND_SOCKET" ]; then
@@ -41,9 +42,11 @@ for i in $(seq 1 20); do
   [ "$i" -eq 20 ] && { log "❌ socket never appeared"; exit 1; }
 done
 
-# 5) Launch your client under that same RUNTIME_DIR
+# 5) Launch your client (default: foot)
+CLIENT=( "${@:-foot}" )
 log "Launching client: ${CLIENT[*]}"
 sudo -u "$USER" env \
     XDG_RUNTIME_DIR="$LOGDIR" \
     WAYLAND_DISPLAY="$WAYLAND_SOCKET" \
     "${CLIENT[@]}"
+
