@@ -39,6 +39,14 @@ else
     log "'$USER' is already in 'video' group"
 fi
 
+if ! id -nG "$USER" | grep -qw input
+then
+    log "Adding '$USER' to group 'input'"
+    usermod -aG input "$USER"
+else
+    log "'$USER' is already in 'input' group"
+fi
+
 # ── 3. Fix /dev/tty1 perms live ───────────────────────────────────
 if [ -e "$TTY_DEV" ]
 then
