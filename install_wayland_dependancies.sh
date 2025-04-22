@@ -45,6 +45,7 @@ PACKAGES=(
   maliit-keyboard
   weston
   foot
+  glmark2-wayland
 )
 
 # Weston or Weston-launch
