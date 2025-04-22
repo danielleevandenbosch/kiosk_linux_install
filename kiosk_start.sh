@@ -10,10 +10,13 @@
 set -euo pipefail
 
 GUI=gui
-UID=$(id -u "$GUI")
-RUNDIR="/run/user/$UID"
+GUI_UID=$(id -u "$GUI")                      # avoid shadowing readonly $UID
+RUNDIR="/run/user/$GUI_UID"
 SOCK=wayland-0
-WESTON_ARGS=(--backend=drm-backend.so --idle-time=0 --socket="$SOCK" --debug)
+WESTON_ARGS=( --backend=drm-backend.so \
+              --idle-time=0 \
+              --socket="$SOCK" \
+              --debug )
 
 log(){ echo "[kiosk] $*"; }
 
@@ -24,8 +27,8 @@ chown "$GUI:$GUI" "$RUNDIR"
 chmod 700 "$RUNDIR"
 
 # 2) launch Weston if not already running
-if ! pgrep -u "$UID" -x weston >/dev/null; then
-  log "Starting Weston as $GUI, socket=$SOCK"
+if ! pgrep -u "$GUI_UID" -x weston >/dev/null; then
+  log "Starting Weston as $GUI (socket=$SOCK)"
   sudo -u "$GUI" env XDG_RUNTIME_DIR="$RUNDIR" \
     weston "${WESTON_ARGS[@]}" \
     >>"$RUNDIR"/weston.log 2>&1 &
@@ -34,8 +37,8 @@ else
   log "Weston already running, skipping start"
 fi
 
-# 3) wait for the socket to show up
-log "Waiting for Wayland socket…"
+# 3) wait for the socket
+log "Waiting for Wayland socket ($SOCK)…"
 for i in {1..20}; do
   if [ -S "$RUNDIR/$SOCK" ]; then
     log "→ Found $SOCK"
@@ -57,3 +60,4 @@ sudo -u "$GUI" env \
   XDG_RUNTIME_DIR="$RUNDIR" \
   WAYLAND_DISPLAY="$SOCK" \
   "${CLIENT[@]}"
+
