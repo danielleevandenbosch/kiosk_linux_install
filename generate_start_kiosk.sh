@@ -7,7 +7,7 @@ set -euo pipefail
 W=${1:-1920}
 H=${2:-1080}
 URL=${3:-"https://example.com"}
-WESTON_LAUNCH_BIN=${4:-"/usr/bin/weston-launch"}
+WESTON_LAUNCH_BIN=${4:-"/usr/bin/weston"}
 
 cat > /home/gui/start_kiosk.sh <<EOF
 #!/usr/bin/env bash
