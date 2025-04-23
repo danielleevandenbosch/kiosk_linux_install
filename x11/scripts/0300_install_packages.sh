@@ -25,6 +25,7 @@ PACKAGES=(
   neofetch
   htop
   mosh
+  yad
 )
 
 for pkg in "${PACKAGES[@]}"
