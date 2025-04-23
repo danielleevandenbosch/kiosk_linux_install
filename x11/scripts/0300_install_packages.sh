@@ -10,6 +10,7 @@ PACKAGES=(
   xserver-xorg-video-fbdev
   xserver-xorg-input-libinput 
   xinit
+  wmctrl
   chromium
   chromium-browser
   unclutter

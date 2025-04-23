@@ -1,0 +1,56 @@
+#!/bin/sh
+# Ensure we have a DBus session for GSettings
+if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]
+then
+  eval "$(dbus-launch --sh-syntax --exit-with-session)"
+fi
+
+# Configure Onboard once on each X start
+gsettings set org.onboard.window dock-mode   'Docked'
+gsettings set org.onboard.window dock-position 'Bottom'
+gsettings set org.onboard.general auto-show   true
+gsettings set org.onboard.general auto-hide   true
+
+
+# ── prevent blanking ──────────────────────────────────────
+xset -dpms       # disable power-save
+xset s off       # disable screen-saver
+xset s noblank   # no blanking
+
+# ── start the docked keyboard ─────────────────────────────
+onboard \
+  --replace \
+  --docked \
+  --auto-show &
+
+# give it a moment to map its window
+sleep 1
+
+# grab your screen dimensions
+screen_w=$(xdpyinfo \
+  | awk '/dimensions:/ {print $2}' \
+  | cut -dx -f1)
+screen_h=$(xdpyinfo \
+  | awk '/dimensions:/ {print $2}' \
+  | cut -dx -f2)
+
+# keyboard height = half the screen
+kbd_h=$(( screen_h / 2 ))
+
+# force the keyboard above everything and size it
+wmctrl -r "Onboard" -b add,above
+wmctrl -r "Onboard" \
+  -e "0,0,$(( screen_h - kbd_h )),$screen_w,$kbd_h"
+
+# ── launch the browser in the *other* half ────────────────
+# note: we drop --kiosk so we can size it manually
+while true; do
+  chromium \
+    --app='http://www.google.com' \
+    --window-position=0,$(( screen_h - kbd_h )) \
+    --window-size=$screen_w,$kbd_h \
+    --disable-infobars \
+    --noerrdialogs \
+    --incognito
+  sleep 2
+done
