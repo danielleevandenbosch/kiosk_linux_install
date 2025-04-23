@@ -64,6 +64,7 @@ PACKAGES=(
   vim
   neofetch
   htop
+  mosh
 )
 
 for pkg in "${PACKAGES[@]}"
