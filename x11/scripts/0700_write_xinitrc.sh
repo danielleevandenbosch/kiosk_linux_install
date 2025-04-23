@@ -10,10 +10,9 @@ xrandr \
 matchbox-window-manager &
 sleep 3
 ${CHROMIUM_CMD} \
-  --kiosk \
-  --no-first-run \
-  --disable-infobars \
-  --disable-session-crashed-bubble \
+   --enable-virtual-keyboard \
+   --touch-events \
+   --enable-viewport \
   ${TARGET_URL}
 EOF
 
