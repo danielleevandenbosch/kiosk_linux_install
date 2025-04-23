@@ -10,6 +10,7 @@ PACKAGES=(
   xserver-xorg-video-fbdev
   xserver-xorg-input-libinput 
   xinit
+  xdotool
   wmctrl
   chromium
   chromium-browser
@@ -26,6 +27,10 @@ PACKAGES=(
   htop
   mosh
   yad
+  onboard
+  openbox
+  python3-gi
+  gir1.2-gtk-3.0
 )
 
 for pkg in "${PACKAGES[@]}"
