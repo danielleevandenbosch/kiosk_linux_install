@@ -22,4 +22,8 @@ source "$SCRIPT_DIR/scripts/0300_install_packages.sh"
 # ── Step 4: Copy all dotfiles/scripts to /home/gui ──────────
 source "$SCRIPT_DIR/scripts/0400_setup_dotfiles.sh"
 
+# ── Step 4.5: firefox setup ──────────
+source "$SCRIPT_DIR/scripts/0450_setup_firefox_profile.sh"
+
+
 echo "✅ Kiosk install complete. You can now reboot."
