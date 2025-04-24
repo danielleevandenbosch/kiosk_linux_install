@@ -9,16 +9,26 @@ SCREEN_H=$(xdpyinfo | awk '/dimensions:/ {print $2}' | cut -d 'x' -f2)
 KBD_H=$(( SCREEN_H / 3 ))  # Use one-third for keyboard
 BROWSER_H=$(( SCREEN_H - KBD_H ))
 
-# ── Start Chromium in resized window ───────────────────────
-chromium \
-  --app='https://www.google.com' \
-  --window-position=0,0 \
-  --window-size=${SCREEN_W},${BROWSER_H} &
+# ── Start Web Browser in resized window ───────────────────────
+# chromium \
+#  --app='https://www.google.com' \
+#  --window-position=0,0 \
+#  --window-size=${SCREEN_W},${BROWSER_H} &
+firefox-esr -P kiosk --no-remote --kiosk "https://www.google.com" &
+
 
 # ── Delay and rename Chromium window (optional) ────────────
+#sleep 2
+#wmctrl -r :ACTIVE: -b remove,maximized_vert,maximized_horz
+#wmctrl -r :ACTIVE: -e 0,0,0,$SCREEN_W,$BROWSER_H
+
+# ── Resize Firefox (optional, if kiosk isn't behaving) ─────
 sleep 2
-wmctrl -r :ACTIVE: -b remove,maximized_vert,maximized_horz
-wmctrl -r :ACTIVE: -e 0,0,0,$SCREEN_W,$BROWSER_H
+FIREFOX_WIN_ID=$(xdotool search --onlyvisible --class firefox | head -n 1)
+wmctrl -i -r "$FIREFOX_WIN_ID" -b remove,maximized_vert,maximized_horz
+wmctrl -i -r "$FIREFOX_WIN_ID" -e 0,0,0,$SCREEN_W,$BROWSER_H
+
+
 
 # ── Launch Onboard in bottom area ──────────────────────────
 # Add these two lines:
@@ -31,30 +41,8 @@ sleep 2
 wmctrl -r "Onboard" -b add,above
 wmctrl -r "Onboard" -e 0,0,$BROWSER_H,$SCREEN_W,$KBD_H
 
-# ── Create toggle script ───────────────────────────────────
-cat << 'EOF' > "$HOME/toggle_keyboard_button.sh"
-#!/bin/bash
-
-SCREEN_W=$(xdpyinfo | awk '/dimensions:/ {print $2}' | cut -d 'x' -f1)
-SCREEN_H=$(xdpyinfo | awk '/dimensions:/ {print $2}' | cut -d 'x' -f2)
-KBD_H=$(( SCREEN_H / 3 ))
-BROWSER_H=$(( SCREEN_H - KBD_H ))
-
-if pgrep onboard >/dev/null; then
-  pkill onboard
-  wmctrl -r :ACTIVE: -e 0,0,0,$SCREEN_W,$SCREEN_H
-else
-  onboard &
-  sleep 2
-  wmctrl -r "Onboard" -b add,above
-  wmctrl -r "Onboard" -e 0,0,$BROWSER_H,$SCREEN_W,$KBD_H
-  wmctrl -r :ACTIVE: -e 0,0,0,$SCREEN_W,$BROWSER_H
-fi
-EOF
-
-chmod +x "$HOME/toggle_keyboard_button.sh"
-
 # ── Launch floating toggle button ──────────────────────────
 
 
 ~/keyboard_toggle.py &
+~/toggle_keyboard_button.sh &

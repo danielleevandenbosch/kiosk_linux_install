@@ -23,5 +23,9 @@ chmod +x "$GUI_HOME/.config/openbox/autostart"
 cp "$DOTFILES_DIR/keyboard_toggle.py" "$GUI_HOME/keyboard_toggle.py"
 chmod +x "$GUI_HOME/keyboard_toggle.py"
 
+# -- Deploy the toggle button for the keyboard script-----
+cp "$DOTFILES_DIR/toggle_keyboard_button.sh" "$GUI_HOME/toggle_keyboard_button.sh"
+chmod +x "$GUI_HOME/toggle_keyboard_button.sh"
+
 # ── Fix permissions ───────────────────────
 chown -R gui:gui "$GUI_HOME"

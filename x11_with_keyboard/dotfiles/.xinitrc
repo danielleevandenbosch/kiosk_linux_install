@@ -1,4 +1,5 @@
 #!/bin/bash
+# .xinitrc
 
 # Prevent screen blanking
 xset -dpms
