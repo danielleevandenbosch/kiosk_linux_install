@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Author: Daniel L. Van Den Bosch
+# Date: 2025
+# keyboard_toggle.py
 
 import gi
 import os
