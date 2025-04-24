@@ -31,6 +31,7 @@ PACKAGES=(
   openbox
   python3-gi
   gir1.2-gtk-3.0
+  firefox-esr
 )
 
 for pkg in "${PACKAGES[@]}"
