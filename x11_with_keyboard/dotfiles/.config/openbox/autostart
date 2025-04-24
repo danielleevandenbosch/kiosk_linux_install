@@ -12,9 +12,6 @@ BROWSER_H=$(( SCREEN_H - KBD_H ))
 # ── Start Chromium in resized window ───────────────────────
 chromium \
   --app='https://www.google.com' \
-  --disable-infobars \
-  --noerrdialogs \
-  --incognito \
   --window-position=0,0 \
   --window-size=${SCREEN_W},${BROWSER_H} &
 
@@ -24,7 +21,12 @@ wmctrl -r :ACTIVE: -b remove,maximized_vert,maximized_horz
 wmctrl -r :ACTIVE: -e 0,0,0,$SCREEN_W,$BROWSER_H
 
 # ── Launch Onboard in bottom area ──────────────────────────
-onboard &
+# Add these two lines:
+gsettings set org.onboard.window window-type 'utility'
+gsettings set org.onboard.window show-floating-icon false
+
+# Then start Onboard
+onboard --layout=Small &
 sleep 2
 wmctrl -r "Onboard" -b add,above
 wmctrl -r "Onboard" -e 0,0,$BROWSER_H,$SCREEN_W,$KBD_H
