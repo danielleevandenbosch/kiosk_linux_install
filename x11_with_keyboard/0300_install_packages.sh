@@ -3,6 +3,7 @@
 ### scripts/03_install_packages.sh
 echo "Updating package lists..."
 apt-get update -y
+# 0300_install_packages.sh
 
 PACKAGES=(
   xorg
