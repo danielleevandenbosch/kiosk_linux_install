@@ -20,7 +20,7 @@ cp "$DOTFILES_DIR/.bash_profile" "$GUI_HOME/.bash_profile"
 
 # ── Deploy Openbox autostart ──────────────
 echo "0400d Deploy Openbox autostart"
-cp "$DOTFILES_DIR/autostart" "$GUI_HOME/.config/openbox/autostart"
+cp "$DOTFILES_DIR/.config/openbox/autostart" "$GUI_HOME/.config/openbox/autostart"
 chmod +x "$GUI_HOME/.config/openbox/autostart"
 
 # ── Deploy GTK toggle script ──────────────
