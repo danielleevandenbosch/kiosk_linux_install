@@ -4,7 +4,7 @@
 set -euo pipefail
 
 GUI_HOME="/home/gui"
-DOTFILES_DIR="$(dirname "$0")/../dotfiles"
+DOTFILES_DIR="$(dirname "$0")/dotfiles"
 
 # ── 0400a Ensure Openbox config dir ─────────────
 echo "0400a Ensure Openbox config dir"
