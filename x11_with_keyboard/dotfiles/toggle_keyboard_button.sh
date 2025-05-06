@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# toggle_keyboard_button.sh
 SCREEN_W=$(xdpyinfo | awk '/dimensions:/ {print $2}' | cut -d 'x' -f1)
 SCREEN_H=$(xdpyinfo | awk '/dimensions:/ {print $2}' | cut -d 'x' -f2)
 KBD_H=$(( SCREEN_H / 3 ))
