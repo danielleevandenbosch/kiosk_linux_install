@@ -13,8 +13,10 @@ from gi.repository import Gtk, Gdk
 
 SCREEN_W = Gdk.Screen.get_default().get_width()
 SCREEN_H = Gdk.Screen.get_default().get_height()
+TOGGLE_H = 40
 KBD_H = SCREEN_H // 3
-BROWSER_H = SCREEN_H - KBD_H
+BROWSER_H = SCREEN_H - KBD_H - TOGGLE_H
+
 
 class ToggleWindow(Gtk.Window):
     def __init__(self):
@@ -42,7 +44,7 @@ class ToggleWindow(Gtk.Window):
     def on_click(self, widget):
         if "onboard" in subprocess.getoutput("pgrep -a onboard"):
             subprocess.call(["pkill", "onboard"])
-            subprocess.call(["wmctrl", "-r", ":ACTIVE:", "-e", f"0,0,0,{SCREEN_W},{SCREEN_H}"])
+            subprocess.call(["wmctrl", "-r", ":ACTIVE:", "-e", f"0,0,{TOGGLE_H},{SCREEN_W},{SCREEN_H - TOGGLE_H}"])
         else:
             subprocess.Popen(["onboard"])
             time.sleep(2)
