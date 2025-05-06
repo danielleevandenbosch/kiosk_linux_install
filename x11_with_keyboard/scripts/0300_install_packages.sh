@@ -12,6 +12,7 @@ PACKAGES=(
   xserver-xorg-input-libinput 
   xinit
   xdotool
+  dbus-x11
   wmctrl
   chromium
   chromium-browser
