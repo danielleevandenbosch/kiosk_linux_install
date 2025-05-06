@@ -29,6 +29,7 @@ render_template() {
   local template=$1
   local output=$2
   shift 2
+  template=$(echo "$template" | sed "s/.././")
   echo "template: $template"
   echo "output: $output"
   cp "$template" "$output"
