@@ -34,6 +34,8 @@ class ToggleWindow(Gtk.Window):
 
         self.set_size_request(60, 40)
         self.move(SCREEN_W - 70, SCREEN_H - 50)
+        GLib.timeout_add_seconds(5, self.keep_above_forever)
+
 
     def move(self, x, y):
         self.connect("realize", lambda w: w.move(x, y))
@@ -48,6 +50,11 @@ class ToggleWindow(Gtk.Window):
             subprocess.call(["wmctrl", "-r", "Onboard", "-b", "add,above"])
             subprocess.call(["wmctrl", "-r", "Onboard", "-e", f"0,0,{BROWSER_H},{SCREEN_W},{KBD_H}"])
             subprocess.call(["wmctrl", "-r", ":ACTIVE:", "-e", f"0,0,0,{SCREEN_W},{BROWSER_H}"])
+    def keep_above_forever(self):
+        window_id = self.get_window().get_xid()
+        subprocess.call(["xdotool", "windowraise", str(window_id)])
+        subprocess.call(["wmctrl", "-i", "-r", str(window_id), "-b", "add,above"])
+        return True  # repeat the timer
 
 win = ToggleWindow()
 win.connect("destroy", Gtk.main_quit)
