@@ -15,7 +15,7 @@ BROWSER_H=$(( SCREEN_H - KBD_H - TOGGLE_H ))
 #  --app='https://www.google.com' \
 #  --window-position=0,0 \
 #  --window-size=${SCREEN_W},${BROWSER_H} &
-firefox-esr -P kiosk --no-remote --kiosk "https://www.google.com" &
+firefox-esr -P kiosk --no-remote "https://www.google.com" &
 
 
 # ── Delay and rename Chromium window (optional) ────────────
