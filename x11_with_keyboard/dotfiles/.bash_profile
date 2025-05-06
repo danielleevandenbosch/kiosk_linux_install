@@ -16,7 +16,7 @@ echo "battery at: " | figlet
 acpi | grep -oP '[0-9]+%' | figlet
 
 sleep 30
-
+# next file is .xinitrc
 if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]
 then
   startx
