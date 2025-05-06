@@ -7,14 +7,15 @@ PROFILE_NAME="kiosk"
 PROFILE_DIR="$GUI_HOME/.mozilla/kiosk"
 TEMPLATE_DIR="$(dirname "$0")/../templates"
 
-echo "0450a Creating Firefox profile: $PROFILE_NAME"
 
+echo "04500a killing firefox"
 # Ensure Firefox isn't running
 sudo -u gui pkill firefox-esr || true
 
+echo "0450b Creating Firefox profile: $PROFILE_NAME"
 # Create profile if it doesn't exist
 if [ ! -d "$PROFILE_DIR" ]; then
-    sudo -u gui firefox-esr -CreateProfile "$PROFILE_NAME $PROFILE_DIR"
+    sudo -u gui firefox-esr --headless -CreateProfile "$PROFILE_NAME $PROFILE_DIR"
 fi
 
 # Enable userChrome.css styling
