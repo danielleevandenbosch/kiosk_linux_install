@@ -33,6 +33,11 @@ echo "0400f Deploy the toggle button for the keyboard script"
 cp "$DOTFILES_DIR/toggle_keyboard_button.sh" "$GUI_HOME/toggle_keyboard_button.sh"
 chmod +x "$GUI_HOME/toggle_keyboard_button.sh"
 
+# -- Setup the rc file for openbox--
+cp "$DOTFILES_DIR/rc.xml" "$GUI_HOME/.config/openbox/rc.xml"
+chown gui:gui "$GUI_HOME/.config/openbox/rc.xml"
+
+
 # ── Fix permissions ───────────────────────
 echo "0400g Fix Permissions"
 chown -R gui:gui "$GUI_HOME"
