@@ -34,7 +34,7 @@ cp "$DOTFILES_DIR/toggle_keyboard_button.sh" "$GUI_HOME/toggle_keyboard_button.s
 chmod +x "$GUI_HOME/toggle_keyboard_button.sh"
 
 # -- Setup the rc file for openbox--
-cp "$DOTFILES_DIR/rc.xml" "$GUI_HOME/.config/openbox/rc.xml"
+cp "$DOTFILES_DIR/.config/openbox/rc.xml" "$GUI_HOME/.config/openbox/rc.xml"
 chown gui:gui "$GUI_HOME/.config/openbox/rc.xml"
 
 
