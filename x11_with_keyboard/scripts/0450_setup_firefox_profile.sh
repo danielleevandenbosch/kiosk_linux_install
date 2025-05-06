@@ -7,7 +7,7 @@ PROFILE_NAME="kiosk"
 PROFILE_DIR="$GUI_HOME/.mozilla/kiosk"
 TEMPLATE_DIR="$(dirname "$0")/../templates"
 
-echo "🦊 Creating Firefox profile: $PROFILE_NAME"
+echo "0450a Creating Firefox profile: $PROFILE_NAME"
 
 # Ensure Firefox isn't running
 sudo -u gui pkill firefox-esr || true
@@ -47,4 +47,4 @@ render_template "$TEMPLATE_DIR/userChrome.css.hbs" "$PROFILE_DIR/chrome/userChro
 # ── Fix permissions ──────────────────────────────────────────
 chown -R gui:gui "$PROFILE_DIR"
 
-echo "✅ Firefox kiosk profile setup complete."
+echo " Firefox kiosk profile setup complete."
