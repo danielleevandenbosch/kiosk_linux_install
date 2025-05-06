@@ -1,0 +1,10 @@
+<screen>
+  <workarea>
+    <margins>
+      <top>40</top>          <!-- height reserved for your toggle -->
+      <bottom>0</bottom>
+      <left>0</left>
+      <right>0</right>
+    </margins>
+  </workarea>
+</screen>
