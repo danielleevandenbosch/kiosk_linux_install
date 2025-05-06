@@ -6,8 +6,9 @@ sleep 1
 # ── Get screen dimensions ──────────────────────────────────
 SCREEN_W=$(xdpyinfo | awk '/dimensions:/ {print $2}' | cut -d 'x' -f1)
 SCREEN_H=$(xdpyinfo | awk '/dimensions:/ {print $2}' | cut -d 'x' -f2)
+TOGGLE_H=40
 KBD_H=$(( SCREEN_H / 3 ))  # Use one-third for keyboard
-BROWSER_H=$(( SCREEN_H - KBD_H ))
+BROWSER_H=$(( SCREEN_H - KBD_H - TOGGLE_H ))
 
 # ── Start Web Browser in resized window ───────────────────────
 # chromium \
@@ -26,7 +27,7 @@ firefox-esr -P kiosk --no-remote --kiosk "https://www.google.com" &
 sleep 2
 FIREFOX_WIN_ID=$(xdotool search --onlyvisible --class firefox | head -n 1)
 wmctrl -i -r "$FIREFOX_WIN_ID" -b remove,maximized_vert,maximized_horz
-wmctrl -i -r "$FIREFOX_WIN_ID" -e 0,0,0,$SCREEN_W,$BROWSER_H
+wmctrl -i -r "$FIREFOX_WIN_ID" -e 0,0,$TOGGLE_H,$SCREEN_W,$BROWSER_H
 
 
 
